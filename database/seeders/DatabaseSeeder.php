@@ -2,12 +2,17 @@
 
 namespace Database\Seeders;
 
+use App\Models\Campaign;
 use App\Models\Category;
+use App\Models\HomepageBlock;
+use App\Models\MarketingSetting;
+use App\Models\Page;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -74,9 +79,86 @@ class DatabaseSeeder extends Seeder
             $model->categories()->syncWithoutDetaching([$categories[$categorySlug]->id]);
         });
 
-        User::factory()->create([
-            'name' => 'KGM Admin',
+        collect([
+            ['title' => 'Hakkimizda', 'slug' => 'hakkimizda', 'group' => 'corporate', 'body' => 'Karacabey Gross Market, Karacabey ve cevresi icin hizli market siparisi sunar.'],
+            ['title' => 'Iletisim', 'slug' => 'iletisim', 'group' => 'corporate', 'body' => 'Karacabey Gross Market destek ekibine web sitesi ve mobil uygulama uzerinden ulasabilirsiniz.'],
+            ['title' => 'KVKK', 'slug' => 'kvkk', 'group' => 'legal', 'body' => 'Kisisel verileriniz yasal mevzuata uygun olarak islenir ve korunur.'],
+            ['title' => 'Gizlilik Politikasi', 'slug' => 'gizlilik-politikasi', 'group' => 'legal', 'body' => 'Gizlilik ve veri guvenligi sureclerimiz tum dijital kanallar icin gecerlidir.'],
+            ['title' => 'Mesafeli Satis Sozlesmesi', 'slug' => 'mesafeli-satis-sozlesmesi', 'group' => 'legal', 'body' => 'Online siparisleriniz mesafeli satis mevzuati kapsaminda yurutulur.'],
+            ['title' => 'Iade ve Degisim', 'slug' => 'iade-ve-degisim', 'group' => 'support', 'body' => 'Iade ve degisim talepleri siparis detaylari uzerinden takip edilir.'],
+            ['title' => 'SSS', 'slug' => 'sss', 'group' => 'support', 'body' => 'Teslimat, odeme ve hesap islemleri hakkinda sik sorulan sorular.'],
+        ])->each(fn (array $page): Page => Page::query()->updateOrCreate([
+            'tenant_id' => $tenant->id,
+            'slug' => $page['slug'],
+        ], $page + [
+            'tenant_id' => $tenant->id,
+            'is_published' => true,
+            'published_at' => now(),
+            'seo_title' => $page['title'].' | Karacabey Gross Market',
+            'seo_description' => $page['title'].' sayfasi ve Karacabey Gross Market kurumsal bilgileri.',
+        ]));
+
+        HomepageBlock::query()->updateOrCreate([
+            'tenant_id' => $tenant->id,
+            'type' => 'campaign',
+            'title' => 'Haftalik gross firsatlari',
+        ], [
+            'tenant_id' => $tenant->id,
+            'subtitle' => 'Temel gida ve gunluk urunlerde avantajli sepetler.',
+            'link_url' => '/kampanyalar',
+            'link_label' => 'Kampanyalari Gor',
+            'sort_order' => 10,
+            'is_active' => true,
+        ]);
+
+        $campaign = Campaign::query()->updateOrCreate([
+            'tenant_id' => $tenant->id,
+            'slug' => 'haftalik-gross-firsatlari',
+        ], [
+            'tenant_id' => $tenant->id,
+            'name' => 'Haftalik Gross Firsatlari',
+            'description' => 'Karacabey Gross Market haftalik avantajli urunleri.',
+            'discount_type' => 'fixed',
+            'discount_value' => 2500,
+            'is_active' => true,
+            'seo' => [
+                'title' => 'Haftalik Gross Firsatlari | Karacabey Gross Market',
+                'description' => 'Karacabey Gross Market kampanya ve kupon firsatlari.',
+            ],
+        ]);
+
+        $campaign->coupons()->updateOrCreate([
+            'tenant_id' => $tenant->id,
+            'code' => 'KGM25',
+        ], [
+            'tenant_id' => $tenant->id,
+            'discount_type' => 'fixed',
+            'discount_value' => 2500,
+            'minimum_order_cents' => 25000,
+            'usage_limit' => 1000,
+            'is_active' => true,
+        ]);
+
+        MarketingSetting::query()->updateOrCreate([
+            'tenant_id' => $tenant->id,
+        ], [
+            'google_analytics_id' => null,
+            'google_ads_id' => null,
+            'google_ads_conversion_label' => null,
+            'google_site_verification' => null,
+            'meta_pixel_id' => null,
+        ]);
+
+        $admin = User::query()->firstOrNew([
             'email' => 'admin@karacabeygrossmarket.com',
         ]);
+
+        if (! $admin->exists) {
+            $admin->password = Hash::make('password');
+        }
+
+        $admin->name = 'KGM Admin';
+        $admin->is_admin = true;
+        $admin->save();
     }
 }

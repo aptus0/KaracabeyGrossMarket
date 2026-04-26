@@ -2,8 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ShellHeader } from "@/app/_components/ShellHeader";
-import { findProduct, formatPrice, products } from "@/lib/catalog";
+import { Breadcrumb } from "@/app/_components/Breadcrumb";
+import { FavoriteButton } from "@/app/_components/FavoriteButton";
+import { PriceBox } from "@/app/_components/PriceBox";
+import { ProductSlider } from "@/app/_components/ProductSlider";
+import { QuantitySelector } from "@/app/_components/QuantitySelector";
+import { SeoHead } from "@/app/_components/SeoHead";
+import { GuestLayout } from "@/app/_layouts/GuestLayout";
+import { findProduct, products } from "@/lib/catalog";
 
 type ProductPageProps = {
   params: Promise<{
@@ -60,52 +66,60 @@ export default async function ProductPage({ params }: ProductPageProps) {
   };
 
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <ShellHeader />
-      <main className="s44">
-        <div className="s48">
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            priority
-            sizes="(max-width: 980px) 100vw, 45vw"
-          />
-        </div>
-        <section className="s45">
-          <span className="s21">{product.badge}</span>
-          <h1>{product.name}</h1>
-          <p>{product.description}</p>
-          <div className="s46">
-            <div className="s47">
-              <strong>{formatPrice(product.price)}</strong>
-              <span>{product.unit}</span>
-            </div>
-            {product.oldPrice ? (
-              <div className="s47">
-                <span>Eski fiyat</span>
-                <s>{formatPrice(product.oldPrice)}</s>
-              </div>
-            ) : null}
-            <div className="s47">
+    <GuestLayout>
+      <SeoHead data={jsonLd} />
+      <main className="product-page">
+        <Breadcrumb
+          items={[
+            { href: "/", label: "Ana Sayfa" },
+            { href: "/products", label: "Ürünler" },
+            { label: product.name },
+          ]}
+        />
+
+        <section className="product-detail">
+          <div className="product-detail__image">
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              priority
+              sizes="(max-width: 980px) 100vw, 45vw"
+            />
+          </div>
+          <div className="product-detail__content">
+            <span className="pill">{product.badge}</span>
+            <h1>{product.name}</h1>
+            <p>{product.description}</p>
+            <PriceBox price={product.price} oldPrice={product.oldPrice} unit={product.unit} />
+            <div className="stock-row">
               <span>Stok</span>
               <strong>{product.stock} adet</strong>
             </div>
-          </div>
-          <div className="s10">
-            <Link className="s11" href="/checkout">
-              Sepete Ekle
-            </Link>
-            <Link className="s12" href="/products">
+            <div className="purchase-box">
+              <form action="/checkout">
+                <input type="hidden" name="product" value={product.slug} />
+                <QuantitySelector />
+                <button className="primary-action" type="submit">
+                  Sepete Ekle
+                </button>
+              </form>
+              <FavoriteButton productSlug={product.slug} />
+            </div>
+            <Link className="secondary-action" href="/products">
               Ürünlere Dön
             </Link>
           </div>
         </section>
+
+        <section className="content-band" aria-label="Benzer ürünler">
+          <div className="section-heading">
+            <p className="eyebrow">Benzer ürünler</p>
+            <h2>Sepete yakışanlar</h2>
+          </div>
+          <ProductSlider products={products.filter((item) => item.slug !== product.slug)} />
+        </section>
       </main>
-    </>
+    </GuestLayout>
   );
 }

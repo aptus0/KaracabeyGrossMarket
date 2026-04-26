@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\ContentController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\PaymentStatusController;
@@ -21,6 +22,11 @@ Route::prefix('v1')->group(function (): void {
     Route::get('/products/{slug}', [ProductController::class, 'show'])->middleware('throttle:api');
     Route::get('/categories', [CategoryController::class, 'index'])->middleware('throttle:api');
     Route::get('/categories/{slug}', [CategoryController::class, 'show'])->middleware('throttle:api');
+    Route::get('/content/homepage', [ContentController::class, 'homepage'])->middleware('throttle:api');
+    Route::get('/content/pages', [ContentController::class, 'pages'])->middleware('throttle:api');
+    Route::get('/content/pages/{slug}', [ContentController::class, 'page'])->middleware('throttle:api');
+    Route::get('/content/campaigns', [ContentController::class, 'campaigns'])->middleware('throttle:api');
+    Route::get('/content/marketing', [ContentController::class, 'marketing'])->middleware('throttle:api');
 
     Route::get('/cart', [CartController::class, 'show'])->middleware('throttle:api');
     Route::post('/cart/items', [CartController::class, 'store'])->middleware('throttle:api');

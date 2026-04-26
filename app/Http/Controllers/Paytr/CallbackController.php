@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Paytr;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\CartItem;
 use App\Models\Payment;
 use App\Models\PaymentEvent;
 use App\Models\PaymentMethod;
+use App\Models\Product;
 use App\Services\Paytr\PaytrClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -65,7 +67,7 @@ class CallbackController extends Controller
             $lockedPayment = Payment::query()
                 ->whereKey($payment->id)
                 ->lockForUpdate()
-                ->with('order')
+                ->with('order.items')
                 ->firstOrFail();
 
             if (in_array($lockedPayment->status, [
@@ -100,6 +102,7 @@ class CallbackController extends Controller
                 ]);
 
                 $this->persistCardTokenIfPresent($lockedPayment, $payload);
+                $this->clearCartIfPresent($lockedPayment);
 
                 return;
             }
@@ -112,6 +115,7 @@ class CallbackController extends Controller
             ]);
 
             $lockedPayment->order->update(['status' => OrderStatus::Failed]);
+            $this->releaseReservedStock($lockedPayment);
         });
 
         return response('OK')->header('Content-Type', 'text/plain');
@@ -143,6 +147,42 @@ class CallbackController extends Controller
             'expiry_year' => isset($payload['year']) ? (int) $payload['year'] : null,
             'requires_cvv' => (bool) ($payload['require_cvv'] ?? false),
         ]);
+    }
+
+    private function clearCartIfPresent(Payment $payment): void
+    {
+        $order = $payment->order;
+        $metadata = $order->metadata ?? [];
+
+        if ($order->user_id) {
+            $order->user?->cartItems()->delete();
+        }
+
+        if (! empty($metadata['cart_token'])) {
+            CartItem::query()
+                ->where('tenant_id', $order->tenant_id)
+                ->where('cart_token', $metadata['cart_token'])
+                ->delete();
+        }
+    }
+
+    private function releaseReservedStock(Payment $payment): void
+    {
+        $order = $payment->order;
+        $metadata = $order->metadata ?? [];
+
+        if (! ($metadata['stock_reserved'] ?? false) || ($metadata['stock_released'] ?? false)) {
+            return;
+        }
+
+        foreach ($order->items as $item) {
+            if ($item->product_id) {
+                Product::query()->whereKey($item->product_id)->increment('stock_quantity', $item->quantity);
+            }
+        }
+
+        $metadata['stock_released'] = true;
+        $order->update(['metadata' => $metadata]);
     }
 
     private function sanitizedPayload(array $payload): array

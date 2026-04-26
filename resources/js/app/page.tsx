@@ -1,7 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ShellHeader } from "@/app/_components/ShellHeader";
-import { formatPrice, products } from "@/lib/catalog";
+import { CampaignBanner } from "@/app/_components/CampaignBanner";
+import { CategoryCard } from "@/app/_components/CategoryCard";
+import { PageBuilderBlock } from "@/app/_components/PageBuilderBlock";
+import { ProductSlider } from "@/app/_components/ProductSlider";
+import { SeoHead } from "@/app/_components/SeoHead";
+import { GuestLayout } from "@/app/_layouts/GuestLayout";
+import { categories, products } from "@/lib/catalog";
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -14,31 +19,27 @@ const jsonLd = {
 
 export default function Home() {
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <ShellHeader />
+    <GuestLayout>
+      <SeoHead data={jsonLd} />
 
       <main>
-        <section className="s5">
-          <div className="s6">
-            <p className="s7">Karacabey online gross market</p>
-            <h1 className="s8">Günlük market siparişleri, güvenli PayTR ödeme.</h1>
-            <p className="s9">
+        <section className="hero-section">
+          <div className="hero-section__copy">
+            <p className="eyebrow">Karacabey online gross market</p>
+            <h1>Günlük market siparişleri, güvenli PayTR ödeme.</h1>
+            <p>
               Yerel ürünler, gross fiyat avantajı, mobil uyumlu hızlı checkout ve güvenli ödeme akışı.
             </p>
-            <div className="s10">
-              <Link className="s11" href="/products">
+            <div className="hero-section__actions">
+              <Link className="primary-action" href="/products">
                 Alışverişe Başla
               </Link>
-              <Link className="s12" href="/checkout">
+              <Link className="secondary-action" href="/checkout">
                 Checkout
               </Link>
             </div>
           </div>
-          <div className="s13" aria-hidden="true">
+          <div className="hero-section__image" aria-hidden="true">
             <Image
               src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80"
               alt=""
@@ -49,39 +50,39 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="s14" aria-label="Öne çıkan ürünler">
-          <div className="s15">
-            <p className="s7">Bugünün seçimi</p>
-            <h2 className="s16">Hızlı sepet ürünleri</h2>
+        <section className="content-band" aria-label="Kategoriler">
+          <div className="section-heading">
+            <p className="eyebrow">Kategoriler</p>
+            <h2>Hızlı alışveriş alanları</h2>
           </div>
-          <div className="s17">
-            {products.map((product) => (
-              <article className="s18" key={product.slug}>
-                <Link href={`/product/${product.slug}`} className="s19">
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    fill
-                    sizes="(max-width: 620px) 100vw, (max-width: 980px) 50vw, 25vw"
-                  />
-                </Link>
-                <div className="s20">
-                  <span className="s21">{product.badge}</span>
-                  <h3>{product.name}</h3>
-                  <p>{product.brand}</p>
-                  <div className="s22">
-                    <strong>{formatPrice(product.price)}</strong>
-                    <span>{product.unit}</span>
-                  </div>
-                  <Link className="s23" href="/checkout">
-                    Sepete Ekle
-                  </Link>
-                </div>
-              </article>
+          <div className="category-grid">
+            {categories.map((category) => (
+              <CategoryCard key={category.slug} category={category} />
             ))}
           </div>
         </section>
+
+        <CampaignBanner
+          title="Haftalık gross fırsatları"
+          description="Temel gıda ve günlük ürünlerde avantajlı sepetler."
+          href="/products"
+        />
+
+        <section className="content-band" aria-label="Öne çıkan ürünler">
+          <div className="section-heading">
+            <p className="eyebrow">Bugünün seçimi</p>
+            <h2>Hızlı sepet ürünleri</h2>
+          </div>
+          <ProductSlider products={products} />
+        </section>
+
+        <PageBuilderBlock eyebrow="Operasyon" title="Karacabey içinde düzenli teslimat">
+          <p>
+            Sipariş, ödeme, iade ve teslimat akışı Laravel API üzerinden yönetilir; müşteri vitrini NextJS ile hızlı
+            ve SEO odaklı çalışır.
+          </p>
+        </PageBuilderBlock>
       </main>
-    </>
+    </GuestLayout>
   );
 }

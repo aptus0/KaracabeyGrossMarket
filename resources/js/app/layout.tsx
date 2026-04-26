@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MarketingPixels } from "@/app/_components/MarketingPixels";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,6 +27,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+  },
 };
 
 export default function RootLayout({
@@ -35,7 +39,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr">
-      <body className="s0">{children}</body>
+      <body className="s0">
+        {children}
+        <MarketingPixels />
+      </body>
     </html>
   );
 }

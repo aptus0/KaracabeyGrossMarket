@@ -1,27 +1,24 @@
 import Link from "next/link";
-import { ShellHeader } from "@/app/_components/ShellHeader";
+import { AuthLayout } from "@/app/_layouts/AuthLayout";
 
 export default function AuthPage() {
   return (
-    <>
-      <ShellHeader />
-      <main className="s50">
-        <section className="s51">
-          <p className="s7">Karacabey Gross hesabı</p>
-          <h1>Hızlı giriş, güvenli checkout.</h1>
-          <p className="s9">
-            Siparişlerinizi, kayıtlı PayTR kart tokenlarınızı ve teslimat bilgilerinizi tek alanda yönetin.
-          </p>
-          <div className="s53">
-            <Link className="s54" href="/auth/login">
-              Giriş Yap
-            </Link>
-            <Link className="s55" href="/auth/register">
-              Kayıt Ol
-            </Link>
-          </div>
-        </section>
-      </main>
-    </>
+    <AuthLayout>
+      <section className="auth-panel">
+        <p className="eyebrow">Karacabey Gross hesabı</p>
+        <h1>Hızlı giriş, güvenli checkout.</h1>
+        <p>
+          Siparişlerinizi, kayıtlı PayTR kart tokenlarınızı ve teslimat bilgilerinizi tek alanda yönetin.
+        </p>
+        <div className="split-actions">
+          <Link className="primary-action" href="/auth/login">
+            Giriş Yap
+          </Link>
+          <Link className="secondary-action" href="/auth/register">
+            Kayıt Ol
+          </Link>
+        </div>
+      </section>
+    </AuthLayout>
   );
 }

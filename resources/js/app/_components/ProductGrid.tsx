@@ -1,0 +1,16 @@
+import type { KgmProduct } from "@/lib/catalog";
+import { ProductCard } from "@/app/_components/ProductCard";
+
+type ProductGridProps = {
+  products: KgmProduct[];
+};
+
+export function ProductGrid({ products }: ProductGridProps) {
+  return (
+    <div className="product-grid">
+      {products.map((product, index) => (
+        <ProductCard key={product.slug} product={product} priority={index < 2} />
+      ))}
+    </div>
+  );
+}
