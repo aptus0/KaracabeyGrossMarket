@@ -7,25 +7,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Number;
 
-class Product extends Model
+class Category extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'tenant_id',
+        'parent_id',
         'name',
         'slug',
         'description',
-        'brand',
-        'barcode',
-        'price_cents',
-        'compare_at_price_cents',
-        'stock_quantity',
         'image_url',
         'seo',
-        'metadata',
+        'sort_order',
         'is_active',
     ];
 
@@ -33,7 +28,6 @@ class Product extends Model
     {
         return [
             'seo' => 'array',
-            'metadata' => 'array',
             'is_active' => 'boolean',
         ];
     }
@@ -43,23 +37,18 @@ class Product extends Model
         return $this->belongsTo(Tenant::class);
     }
 
-    public function categories(): BelongsToMany
+    public function parent(): BelongsTo
     {
-        return $this->belongsToMany(Category::class)->withTimestamps();
+        return $this->belongsTo(Category::class, 'parent_id');
     }
 
-    public function favorites(): HasMany
+    public function children(): HasMany
     {
-        return $this->hasMany(Favorite::class);
+        return $this->hasMany(Category::class, 'parent_id')->orderBy('sort_order')->orderBy('name');
     }
 
-    public function cartItems(): HasMany
+    public function products(): BelongsToMany
     {
-        return $this->hasMany(CartItem::class);
-    }
-
-    public function formattedPrice(): string
-    {
-        return Number::currency($this->price_cents / 100, 'TRY', locale: 'tr');
+        return $this->belongsToMany(Product::class)->withTimestamps();
     }
 }

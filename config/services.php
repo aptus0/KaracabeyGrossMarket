@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'google' => [
+        'analytics_id' => env('GOOGLE_ANALYTICS_ID'),
+        'ads_id' => env('GOOGLE_ADS_ID'),
+        'ads_conversion_label' => env('GOOGLE_ADS_CONVERSION_LABEL'),
+        'site_verification' => env('GOOGLE_SITE_VERIFICATION'),
+    ],
+
+    'meta' => [
+        'pixel_id' => env('META_PIXEL_ID'),
+    ],
+
 ];

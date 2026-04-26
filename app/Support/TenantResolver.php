@@ -24,7 +24,11 @@ class TenantResolver
         return $tenant ?? Tenant::query()->create([
             'name' => 'Karacabey Gross Market',
             'slug' => 'karacabey-gross-market',
-            'domain' => 'karacabeygrossmarket.com',
+            'domain' => parse_url((string) config('commerce.domains.storefront'), PHP_URL_HOST) ?: 'karacabeygrossmarket.com',
+            'settings' => [
+                'admin_domain' => parse_url((string) config('commerce.domains.admin'), PHP_URL_HOST),
+                'api_domain' => parse_url((string) config('commerce.domains.api'), PHP_URL_HOST),
+            ],
         ]);
     }
 }
