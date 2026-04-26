@@ -451,6 +451,24 @@ img {
   text-align: left;
 }
 
+.s52 label {
+  display: grid;
+  gap: 6px;
+  color: var(--a6);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.s52 input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--a8);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--a1);
+  font: inherit;
+}
+
 .s53 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

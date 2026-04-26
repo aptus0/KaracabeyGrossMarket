@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\PaymentStatusController;
 use App\Http\Controllers\Api\ProductController;
