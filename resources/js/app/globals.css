@@ -644,25 +644,27 @@ img {
   display: grid;
   grid-template-columns: minmax(180px, 240px) minmax(260px, 1fr) auto;
   align-items: center;
-  gap: 14px;
-  width: min(100%, 1240px);
-  min-height: 64px;
+  gap: 12px;
+  width: min(100%, 1180px);
+  min-height: 60px;
   margin: 0 auto;
-  padding: 8px 32px;
+  padding: 8px 24px;
 }
 
 .site-header__nav-row {
+  position: relative;
+  z-index: 20;
   border-top: 1px solid var(--a8);
 }
 
-.site-header__nav-row .desktop-nav {
-  width: min(100%, 1240px);
+.site-header__nav-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 1180px);
   margin: 0 auto;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  padding: 6px 32px;
-  overflow-x: auto;
+  padding: 6px 24px;
 }
 
 .site-header__inner {
@@ -694,7 +696,7 @@ img {
 .kgm-logo {
   display: inline-flex;
   align-items: center;
-  width: 220px;
+  width: 204px;
   max-width: 100%;
 }
 
@@ -831,10 +833,16 @@ img {
   font-size: 11px;
 }
 
+.header-action--desktop-only {
+  display: inline-flex;
+}
+
 .desktop-nav {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .desktop-nav {
@@ -842,6 +850,7 @@ img {
   border-radius: 8px;
   padding: 4px;
   background: var(--a7);
+  overflow: visible;
 }
 
 .desktop-nav a,
@@ -869,8 +878,10 @@ img {
 
 .mega-menu {
   position: relative;
+  flex: 0 0 auto;
 }
 
+.mega-menu.is-open .mega-menu__panel,
 .mega-menu:focus-within .mega-menu__panel,
 .mega-menu:hover .mega-menu__panel {
   opacity: 1;
@@ -1162,10 +1173,10 @@ img {
 
 .home-carousel {
   position: relative;
-  width: min(100%, 1240px);
+  width: min(100%, 1180px);
   min-height: 560px;
   margin: 0 auto;
-  padding: 32px;
+  padding: 28px;
   overflow: hidden;
 }
 
@@ -1309,9 +1320,9 @@ img {
 .campaign-banner,
 .page-block,
 .app-shell {
-  width: min(100%, 1240px);
+  width: min(100%, 1180px);
   margin: 0 auto;
-  padding: 32px;
+  padding: 28px;
 }
 
 .hero-section {
@@ -1768,10 +1779,10 @@ img {
 .auth-shell {
   display: grid;
   place-items: center;
-  width: min(100%, 1240px);
+  width: min(100%, 1180px);
   min-height: calc(100vh - 180px);
   margin: 0 auto;
-  padding: 32px;
+  padding: 28px;
 }
 
 .auth-panel,
@@ -1841,7 +1852,7 @@ img {
 
 .app-shell {
   display: grid;
-  gap: 20px;
+  gap: 16px;
 }
 
 .app-shell--with-sidebar {
@@ -1850,7 +1861,7 @@ img {
 
 .app-shell__content {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .account-sidebar {
@@ -2131,6 +2142,10 @@ img {
 }
 
 @media (max-width: 980px) {
+  body.s0 {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+
   .site-header__inner,
   .mega-menu,
   .mobile-header {
@@ -2146,9 +2161,9 @@ img {
   .site-header__main {
     display: grid;
     grid-template-columns: auto minmax(132px, 1fr) auto;
-    gap: 10px;
+    gap: 8px;
     min-height: auto;
-    padding: 10px 14px;
+    padding: 8px 12px;
   }
 
   .header-action--menu {
@@ -2156,7 +2171,7 @@ img {
   }
 
   .kgm-logo {
-    width: 170px;
+    width: 156px;
   }
 
   .site-header__search {
@@ -2169,33 +2184,71 @@ img {
     gap: 5px;
   }
 
+  .header-action--desktop-only,
+  .site-header__nav-row {
+    display: none;
+  }
+
   .header-action {
     width: 38px;
     min-width: 38px;
     min-height: 38px;
   }
 
-  .site-header__nav-row .desktop-nav {
-    display: flex;
-    width: 100%;
+  .bottom-nav {
+    position: fixed;
+    right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    left: 14px;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: end;
     gap: 8px;
-    overflow-x: auto;
-    padding: 7px 14px;
+    border: 1px solid rgba(228, 231, 235, 0.92);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.96);
+    padding: 10px;
+    box-shadow: 0 18px 40px rgba(43, 47, 54, 0.16);
+    backdrop-filter: blur(18px);
   }
 
-  .site-header__nav-row .desktop-nav a {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 36px;
-    border: 1px solid var(--a8);
-    border-radius: 8px;
-    background: #ffffff;
-    padding: 0 10px;
+  .bottom-nav__item {
+    display: grid;
+    place-items: center;
+    gap: 4px;
+    min-height: 54px;
+    border-radius: 16px;
     color: var(--a6);
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 800;
-    white-space: nowrap;
+    text-align: center;
+  }
+
+  .bottom-nav__item svg {
+    stroke-width: 2.2;
+  }
+
+  .bottom-nav__item.is-active {
+    background: #fff4ea;
+    color: #2b2f36;
+  }
+
+  .bottom-nav__item--primary {
+    min-height: 62px;
+    background: #ff7a00;
+    color: #ffffff;
+    transform: translateY(-16px);
+    box-shadow: 0 14px 28px rgba(255, 122, 0, 0.28);
+  }
+
+  .bottom-nav__item--primary.is-active {
+    background: #ff7a00;
+    color: #ffffff;
+  }
+
+  .bottom-nav__item--primary span {
+    font-size: 10px;
   }
 
   .site-footer__inner {
@@ -2230,7 +2283,7 @@ img {
   .page-block,
   .app-shell,
   .auth-shell {
-    padding: 18px;
+    padding: 16px;
   }
 
   .hero-section {
@@ -2278,7 +2331,7 @@ img {
 
 @media (max-width: 620px) {
   body.s0 {
-    padding-bottom: 66px;
+    padding-bottom: calc(94px + env(safe-area-inset-bottom));
   }
 
   .hero-section h1,
@@ -2292,12 +2345,12 @@ img {
 
   .site-header__main {
     grid-template-columns: auto minmax(108px, 1fr) auto;
-    gap: 7px;
-    padding: 9px 10px;
+    gap: 6px;
+    padding: 8px 10px;
   }
 
   .kgm-logo {
-    width: 132px;
+    width: 124px;
   }
 
   .header-actions {
@@ -2330,10 +2383,6 @@ img {
     font-size: 13px;
   }
 
-  .site-header__nav-row .desktop-nav {
-    padding: 6px 10px;
-  }
-
   .section-heading,
   .catalog-toolbar,
   .account-heading,
@@ -2360,24 +2409,25 @@ img {
   }
 
   .bottom-nav {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 50;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    border-top: 1px solid var(--a8);
-    background: rgba(255, 255, 255, 0.98);
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    left: 10px;
+    gap: 6px;
+    border-radius: 20px;
+    padding: 8px;
   }
 
-  .bottom-nav a {
-    display: grid;
-    place-items: center;
-    gap: 3px;
+  .bottom-nav__item {
+    min-height: 50px;
+    border-radius: 14px;
+  }
+
+  .bottom-nav__item--primary {
     min-height: 58px;
-    color: var(--a6);
-    font-size: 12px;
-    font-weight: 800;
+    transform: translateY(-14px);
+  }
+
+  .bottom-nav__item--primary span {
+    font-size: 10px;
   }
 }

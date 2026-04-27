@@ -128,12 +128,14 @@ export function Header({ compact = false }: HeaderProps) {
             href="/favorites"
             label="Favoriler"
             icon={<Heart size={20} />}
+            mobileHidden
           />
 
           <IconLink
             href="/cargo-tracking"
             label="Kargo Takip"
             icon={<PackageSearch size={20} />}
+            mobileHidden
           />
 
           <button
@@ -150,6 +152,7 @@ export function Header({ compact = false }: HeaderProps) {
             href="/account"
             label="Hesabım"
             icon={<User size={20} />}
+            mobileHidden
           />
 
           <IconLink
@@ -157,25 +160,28 @@ export function Header({ compact = false }: HeaderProps) {
             label="Giriş"
             icon={<LogIn size={19} />}
             variant="login"
+            mobileHidden
           />
         </div>
       </div>
 
       {!compact && (
         <div className="site-header__nav-row">
-          <nav
-            className="desktop-nav"
-            aria-label="Ana menü"
-          >
+          <div className="site-header__nav-shell">
             <MegaMenu items={navigation.category} />
 
-            {navigation.header.map((item) => (
-              <HeaderNavLink
-                key={`${item.label}-${item.url}`}
-                item={item}
-              />
-            ))}
-          </nav>
+            <nav
+              className="desktop-nav"
+              aria-label="Ana menü"
+            >
+              {navigation.header.map((item) => (
+                <HeaderNavLink
+                  key={`${item.label}-${item.url}`}
+                  item={item}
+                />
+              ))}
+            </nav>
+          </div>
         </div>
       )}
 
@@ -194,6 +200,7 @@ type IconLinkProps = {
   label: string;
   icon: ReactNode;
   variant?: "ghost" | "login";
+  mobileHidden?: boolean;
 };
 
 function IconLink({
@@ -201,11 +208,14 @@ function IconLink({
   label,
   icon,
   variant = "ghost",
+  mobileHidden = false,
 }: IconLinkProps) {
   return (
     <Link
       href={href}
-      className={`header-action header-action--${variant}`}
+      className={`header-action header-action--${variant}${
+        mobileHidden ? " header-action--desktop-only" : ""
+      }`}
       aria-label={label}
     >
       {icon}
@@ -334,6 +344,16 @@ function HeaderDrawer({
 
             <div className="header-drawer__cards">
               <strong>Hızlı Erişim</strong>
+
+              <Link href="/checkout" onClick={onClose}>
+                <ShoppingCart size={18} />
+                Sepetim
+              </Link>
+
+              <Link href="/cargo-tracking" onClick={onClose}>
+                <PackageSearch size={18} />
+                Kargo Takip
+              </Link>
 
               <Link href="/favorites" onClick={onClose}>
                 <Heart size={18} />
