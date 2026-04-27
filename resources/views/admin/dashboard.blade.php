@@ -1,91 +1,130 @@
-@extends('admin.layout')
-
-@section('title', 'Dashboard')
-
-@section('content')
-    <style>
-        /* Sadece Dashboard'a etki edecek shadcn/ui stili */
-        .top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; gap: 1rem; }
-        .top h1 { font-size: 1.875rem; font-weight: 700; letter-spacing: -0.025em; color: var(--foreground); margin: 0; line-height: 1.2; }
-        .eyebrow { font-size: 0.875rem; font-weight: 500; color: var(--muted-foreground); margin: 0 0 0.25rem 0; text-transform: none; }
+<x-layouts.admin header="Genel Bakış">
+    <div class="flex flex-col gap-6">
+        <template id="dashboard-chart-data">{{ json_encode($chartData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}</template>
         
-        /* Butonlar */
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.5rem; padding: 0 1rem; font-size: 0.875rem; font-weight: 500; border-radius: var(--radius); transition: all 0.2s; cursor: pointer; border: 1px solid var(--border); background: var(--sidebar-bg); color: var(--foreground); }
-        .btn:hover { background: var(--accent); color: var(--accent-foreground); }
-        .btn.primary { background: var(--primary); color: white; border: none; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .btn.primary:hover { background: var(--primary); opacity: 0.9; }
-
-        /* İstatistik Kartları */
-        .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 2rem; }
-        .card { background: var(--sidebar-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
-        .card span { font-size: 0.875rem; font-weight: 500; color: var(--muted); text-transform: capitalize; display: block; margin-bottom: 0.5rem; }
-        .card strong { font-size: 1.5rem; font-weight: 700; color: var(--foreground); display: block; }
-
-        /* Tablo Paneli */
-        .panel { background: var(--sidebar-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden; }
-        .panel .top { padding: 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 0; }
-        
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
-        th { font-weight: 500; color: var(--muted-foreground); padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
-        td { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); color: var(--foreground); vertical-align: middle; }
-        tbody tr:hover { background: var(--accent); }
-        tbody tr:last-child td { border-bottom: none; }
-        td a { font-weight: 500; color: var(--foreground); text-decoration: underline; text-underline-offset: 4px; decoration-color: var(--border); }
-        td a:hover { color: var(--primary); }
-        td small { color: var(--muted-foreground); font-size: 0.75rem; display: block; margin-top: 2px; }
-
-        /* Durum Rozeti (Badge) */
-        .status-badge { display: inline-flex; align-items: center; padding: 0.125rem 0.625rem; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; background: var(--accent); color: var(--foreground); border: 1px solid var(--border); }
-    </style>
-
-    <div class="top">
-        <div>
-            <p class="eyebrow">Yönetim paneli</p>
-            <h1>Dashboard</h1>
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <x-ui.card>
+                <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                    <h3 class="font-semibold tracking-tight text-lg">Toplam Kazanç</h3>
+                    <x-lucide-dollar-sign class="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div class="p-6 pt-0">
+                    <div class="text-3xl font-bold">{{ number_format($totalRevenue / 100, 2, ',', '.') }} ₺</div>
+                    <p class="text-xs text-muted-foreground mt-1">
+                        Tüm zamanların toplam geliri
+                    </p>
+                </div>
+            </x-ui.card>
+            <x-ui.card>
+                <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                    <h3 class="font-semibold tracking-tight text-lg">Siparişler</h3>
+                    <x-lucide-shopping-bag class="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div class="p-6 pt-0">
+                    <div class="text-3xl font-bold">{{ number_format($totalOrders) }}</div>
+                    <p class="text-xs text-muted-foreground mt-1">
+                        Tüm zamanların başarılı siparişleri
+                    </p>
+                </div>
+            </x-ui.card>
+            <x-ui.card>
+                <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                    <h3 class="font-semibold tracking-tight text-lg">Kayıtlı Müşteriler</h3>
+                    <x-lucide-users class="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div class="p-6 pt-0">
+                    <div class="text-3xl font-bold">{{ number_format($totalCustomers) }}</div>
+                    <p class="text-xs text-muted-foreground mt-1">
+                        Sistemdeki toplam kullanıcı sayısı
+                    </p>
+                </div>
+            </x-ui.card>
+            <x-ui.card>
+                <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                    <h3 class="font-semibold tracking-tight text-lg">Toplam Ürün</h3>
+                    <x-lucide-package class="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div class="p-6 pt-0">
+                    <div class="text-3xl font-bold">{{ number_format($stats['products'] ?? 0) }}</div>
+                    <p class="text-xs text-muted-foreground mt-1">
+                        Sistemdeki kayıtlı ürünler
+                    </p>
+                </div>
+            </x-ui.card>
         </div>
-        <a class="btn primary" href="{{ route('admin.products.create') }}">Yeni Ürün</a>
-    </div>
 
-    <section class="grid" aria-label="Özet">
-        @foreach($stats as $label => $value)
-            <article class="card">
-                <span>{{ str_replace('_', ' ', $label) }}</span>
-                <strong>{{ $value }}</strong>
-            </article>
-        @endforeach
-    </section>
+        <!-- Charts -->
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <x-ui.card class="lg:col-span-4">
+                <div class="p-6 pb-0 flex flex-col space-y-1.5">
+                    <h3 class="font-semibold tracking-tight">Kazançlar (Son 7 Gün)</h3>
+                    <p class="text-sm text-muted-foreground">Günlük satış trendleri</p>
+                </div>
+                <div class="p-6 pt-4 h-[350px]">
+                    <canvas id="earningsChart"></canvas>
+                </div>
+            </x-ui.card>
 
-    <section class="panel">
-        <div class="top">
-            <div>
-                <p class="eyebrow">Son hareketler</p>
-                <h1>Son siparişler</h1>
+            <x-ui.card class="lg:col-span-3">
+                <div class="p-6 pb-0 flex flex-col space-y-1.5">
+                    <h3 class="font-semibold tracking-tight">Sipariş Hacmi</h3>
+                    <p class="text-sm text-muted-foreground">Son 7 günlük sipariş sayısı</p>
+                </div>
+                <div class="p-6 pt-4 h-[350px]">
+                    <canvas id="ordersChart"></canvas>
+                </div>
+            </x-ui.card>
+        </div>
+
+        <!-- Recent Orders Table -->
+        <x-ui.card>
+            <div class="p-6 flex items-center justify-between">
+                <div>
+                    <h3 class="font-semibold tracking-tight">Son Siparişler</h3>
+                    <p class="text-sm text-muted-foreground">En son gelen siparişler listesi.</p>
+                </div>
+                <x-ui.button as="a" href="{{ route('admin.orders.index') }}" variant="outline">Tümünü Görüntüle</x-ui.button>
             </div>
-            <a class="btn" href="{{ route('admin.orders.index') }}">Tümünü Gör</a>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Sipariş</th>
-                    <th>Müşteri</th>
-                    <th>Tutar</th>
-                    <th>Durum</th>
-                    <th>Ödeme</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($orders as $order)
+            
+            <x-ui.table>
+                <x-slot name="header">
                     <tr>
-                        <td><a href="{{ route('admin.orders.show', $order) }}">{{ $order->merchant_oid }}</a></td>
-                        <td>{{ $order->customer_name }}<br><small>{{ $order->customer_email }}</small></td>
-                        <td>{{ number_format($order->total_cents / 100, 2, ',', '.') }} {{ $order->currency }}</td>
-                        <td><span class="status-badge">{{ $order->status->value }}</span></td>
-                        <td><span class="status-badge">{{ $order->payment?->status->value ?? '-' }}</span></td>
+                        <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Sipariş ID</th>
+                        <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Müşteri</th>
+                        <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Tutar</th>
+                        <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Durum</th>
+                        <th class="h-12 px-6 text-right align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Tarih</th>
                     </tr>
-                @empty
-                    <tr><td colspan="5" style="text-align: center; padding: 3rem; color: var(--muted-foreground);">Sipariş yok.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </section>
-@endsection
+                </x-slot>
+                
+                <tr class="border-b transition-colors hover:bg-muted/30">
+                    <td class="p-4 px-6 align-middle font-medium">#ORD-001</td>
+                    <td class="p-4 px-6 align-middle">Ahmet Yılmaz</td>
+                    <td class="p-4 px-6 align-middle">245,50 ₺</td>
+                    <td class="p-4 px-6 align-middle">
+                        <x-ui.badge variant="default" class="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20">Tamamlandı</x-ui.badge>
+                    </td>
+                    <td class="p-4 px-6 align-middle text-right text-muted-foreground">2 saat önce</td>
+                </tr>
+                <tr class="border-b transition-colors hover:bg-muted/30">
+                    <td class="p-4 px-6 align-middle font-medium">#ORD-002</td>
+                    <td class="p-4 px-6 align-middle">Ayşe Demir</td>
+                    <td class="p-4 px-6 align-middle">1.250,00 ₺</td>
+                    <td class="p-4 px-6 align-middle">
+                        <x-ui.badge variant="secondary" class="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20">İşleniyor</x-ui.badge>
+                    </td>
+                    <td class="p-4 px-6 align-middle text-right text-muted-foreground">5 saat önce</td>
+                </tr>
+                <tr class="transition-colors hover:bg-muted/30">
+                    <td class="p-4 px-6 align-middle font-medium">#ORD-003</td>
+                    <td class="p-4 px-6 align-middle">Mehmet Kaya</td>
+                    <td class="p-4 px-6 align-middle">85,90 ₺</td>
+                    <td class="p-4 px-6 align-middle">
+                        <x-ui.badge variant="destructive" class="bg-red-500/10 text-red-600 hover:bg-red-500/20 border-red-500/20">İptal Edildi</x-ui.badge>
+                    </td>
+                    <td class="p-4 px-6 align-middle text-right text-muted-foreground">1 gün önce</td>
+                </tr>
+            </x-ui.table>
+        </x-ui.card>
+    </div>
+</x-layouts.admin>

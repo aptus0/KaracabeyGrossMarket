@@ -3,14 +3,14 @@ import Link from "next/link";
 import { SeoHead } from "@/app/_components/SeoHead";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
 import { storeCampaigns } from "@/lib/content";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMetadata({
   title: "Kampanyalar",
-  description: "Karacabey Gross Market kampanya ve kupon fırsatları.",
-  alternates: {
-    canonical: "/kampanyalar",
-  },
-};
+  description: "Karacabey Gross Market kampanya, kupon ve fırsat sayfası.",
+  path: "/kampanyalar",
+  keywords: ["kampanyalar", "kupon", "indirim", "market fırsatları"],
+});
 
 export default function CampaignsPage() {
   const jsonLd = {

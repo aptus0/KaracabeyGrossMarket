@@ -3,13 +3,20 @@ import Link from "next/link";
 import { CategoryCard } from "@/app/_components/CategoryCard";
 import { ProductGrid } from "@/app/_components/ProductGrid";
 import { SearchBar } from "@/app/_components/SearchBar";
+import { SeoHead } from "@/app/_components/SeoHead";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
-import { categories, filterProducts } from "@/lib/catalog";
+import { categories } from "@/lib/catalog";
+import { buildMetadata, siteUrl } from "@/lib/seo";
+import { fetchStorefrontProducts } from "@/lib/storefront-products";
 
-export const metadata: Metadata = {
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildMetadata({
   title: "Ürünler",
-  description: "Karacabey Gross Market ürün kataloğu ve online alışveriş.",
-};
+  description: "Karacabey Gross Market ürün kataloğu, kategori filtreleri ve hızlı online alışveriş akışı.",
+  path: "/products",
+  keywords: ["ürünler", "ürün kataloğu", "market kategorileri", "online alışveriş"],
+});
 
 type ProductsPageProps = {
   searchParams: Promise<{
@@ -20,10 +27,32 @@ type ProductsPageProps = {
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const params = await searchParams;
-  const selectedProducts = filterProducts(params.category, params.q);
+  const { products: selectedProducts, total } = await fetchStorefrontProducts({
+    category: params.category,
+    query: params.q,
+    perPage: 24,
+  });
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Karacabey Gross Market Ürünler",
+    description: "Karacabey Gross Market ürün kataloğu ve hızlı online sipariş akışı.",
+    url: `${siteUrl}/products`,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: selectedProducts.length,
+      itemListElement: selectedProducts.map((product, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${siteUrl}/product/${product.slug}`,
+        name: product.name,
+      })),
+    },
+  };
 
   return (
     <GuestLayout>
+      <SeoHead data={itemListSchema} />
       <main className="catalog-page">
         <section className="catalog-hero">
           <div>
@@ -40,7 +69,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         </div>
 
         <div className="catalog-toolbar">
-          <span>{selectedProducts.length} ürün</span>
+          <span>{total} ürün</span>
           <Link className="secondary-action" href="/checkout">
             Sepete Git
           </Link>

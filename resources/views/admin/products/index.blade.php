@@ -1,109 +1,82 @@
-@extends('admin.layout')
-
-@section('title', 'Ürünler')
-
-@section('content')
-    <style>
-        /* shadcn/ui Uyumlu Sayfa Stilleri */
-        .top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; gap: 1rem; }
-        .top h1 { font-size: 1.875rem; font-weight: 700; letter-spacing: -0.025em; color: var(--foreground); margin: 0; line-height: 1.2; }
-        .eyebrow { font-size: 0.875rem; font-weight: 500; color: var(--muted-foreground); margin: 0 0 0.25rem 0; text-transform: none; }
-        
-        /* Aksiyon Alanı ve Arama Kutusu */
-        .actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-        .actions form { margin: 0; display: flex; }
-        .actions input { 
-            height: 2.5rem; border-radius: var(--radius); border: 1px solid var(--border); 
-            background: var(--sidebar-bg); padding: 0 0.75rem; font-size: 0.875rem; 
-            outline: none; transition: all 0.2s; min-width: 220px; color: var(--foreground); 
-        }
-        .actions input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15); }
-        .actions input::placeholder { color: var(--muted-foreground); }
-        
-        /* Butonlar */
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.5rem; padding: 0 1rem; font-size: 0.875rem; font-weight: 500; border-radius: var(--radius); transition: all 0.2s; cursor: pointer; border: 1px solid var(--border); background: var(--sidebar-bg); color: var(--foreground); }
-        .btn:hover { background: var(--accent); color: var(--accent-foreground); }
-        .btn.primary { background: var(--primary); color: white; border: none; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .btn.primary:hover { background: var(--primary); opacity: 0.9; }
-
-        /* Tablo Paneli */
-        .panel { background: var(--sidebar-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
-        th { font-weight: 500; color: var(--muted-foreground); padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
-        td { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); color: var(--foreground); vertical-align: middle; }
-        tbody tr:hover { background: var(--accent); }
-        tbody tr:last-child td { border-bottom: none; }
-        td small { color: var(--muted-foreground); font-size: 0.75rem; display: block; margin-top: 2px; }
-
-        /* Durum Rozetleri */
-        .badge { display: inline-flex; align-items: center; padding: 0.125rem 0.625rem; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; }
-        .badge-active { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .badge-inactive { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-
-        /* Sayfalama Alanı */
-        .pagination { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; align-items: center; }
-    </style>
-
-    <div class="top">
-        <div>
-            <p class="eyebrow">Katalog</p>
-            <h1>Ürünler</h1>
+<x-layouts.admin header="Ürünler">
+    <div class="flex flex-col gap-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold tracking-tight">Ürünler</h2>
+                <p class="text-muted-foreground">Katalogdaki ürünlerinizi buradan yönetebilirsiniz.</p>
+            </div>
+            <x-ui.button as="a" href="{{ route('admin.products.create') }}">
+                <x-lucide-plus class="mr-2 h-4 w-4" /> Ürün Ekle
+            </x-ui.button>
         </div>
-        <div class="actions">
-            <form method="get">
-                <input name="q" value="{{ request('q') }}" placeholder="Ürün ara...">
-            </form>
-            <a class="btn primary" href="{{ route('admin.products.create') }}">Yeni Ürün</a>
-        </div>
-    </div>
 
-    <section class="panel">
-        <table>
-            <thead>
-                <tr>
-                    <th>Ürün</th>
-                    <th>Kategori</th>
-                    <th>Fiyat</th>
-                    <th>Stok</th>
-                    <th>Durum</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($products as $product)
+        <x-ui.card>
+            <div class="p-6 pb-0 border-b pb-6">
+                <form action="{{ route('admin.products.index') }}" method="GET" class="flex items-center gap-4 max-w-md">
+                    <div class="relative flex-1">
+                        <x-lucide-search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <x-ui.input type="search" name="q" placeholder="İsim, SKU veya barkod ile arayın..." class="pl-9 bg-muted/50" value="{{ request('q') }}" />
+                    </div>
+                    <x-ui.button type="submit" variant="secondary">Ara</x-ui.button>
+                </form>
+            </div>
+            
+            <x-ui.table>
+                <x-slot name="header">
                     <tr>
-                        <td>
-                            <strong>{{ $product->name }}</strong>
-                            <small>{{ $product->slug }}</small>
+                        <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">ID</th>
+                        <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Ürün</th>
+                        <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Marka</th>
+                        <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Fiyat</th>
+                        <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Stok</th>
+                        <th class="h-12 px-6 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Durum</th>
+                        <th class="h-12 px-6 text-right align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">İşlemler</th>
+                    </tr>
+                </x-slot>
+
+                @forelse($products as $product)
+                    <tr class="border-b transition-colors hover:bg-muted/30 data-[state=selected]:bg-muted group">
+                        <td class="p-4 px-6 align-middle font-mono text-xs text-muted-foreground">{{ $product->id }}</td>
+                        <td class="p-4 px-6 align-middle">
+                            <div class="font-semibold text-sm">{{ $product->name }}</div>
+                            <div class="text-xs text-muted-foreground mt-0.5">{{ $product->slug }}</div>
                         </td>
-                        <td>{{ $product->categories->pluck('name')->join(', ') ?: '-' }}</td>
-                        <td>{{ number_format($product->price_cents / 100, 2, ',', '.') }} TL</td>
-                        <td>{{ $product->stock_quantity }}</td>
-                        <td>
+                        <td class="p-4 px-6 align-middle text-sm">{{ $product->brand ?? '-' }}</td>
+                        <td class="p-4 px-6 align-middle font-semibold text-sm">{{ $product->formattedPrice() }}</td>
+                        <td class="p-4 px-6 align-middle text-sm">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $product->stock_quantity > 0 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' }}">
+                                {{ $product->stock_quantity }}
+                            </span>
+                        </td>
+                        <td class="p-4 px-6 align-middle">
                             @if($product->is_active)
-                                <span class="badge badge-active">Aktif</span>
+                                <x-ui.badge variant="default">Aktif</x-ui.badge>
                             @else
-                                <span class="badge badge-inactive">Pasif</span>
+                                <x-ui.badge variant="secondary">Pasif</x-ui.badge>
                             @endif
                         </td>
-                        <td style="text-align: right;">
-                            <a class="btn" href="{{ route('admin.products.edit', $product) }}">Düzenle</a>
+                        <td class="p-4 px-6 align-middle text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                            <x-ui.button variant="ghost" size="icon" as="a" href="{{ route('admin.products.edit', $product) }}">
+                                <x-lucide-pencil class="h-4 w-4" />
+                            </x-ui.button>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 3rem; color: var(--muted-foreground);">
-                            Ürün bulunamadı.
+                        <td colspan="7" class="p-8 text-center text-muted-foreground">
+                            <div class="flex flex-col items-center justify-center space-y-3">
+                                <x-lucide-package-x class="h-10 w-10 text-muted-foreground/50" />
+                                <p class="text-lg font-medium">Ürün bulunamadı</p>
+                                <p class="text-sm">Arama kriterlerinizi değiştirin.</p>
+                            </div>
                         </td>
                     </tr>
                 @endforelse
-            </tbody>
-        </table>
-        
-        @if($products->hasPages())
-            <div class="pagination">
-                {{ $products->links() }}
+            </x-ui.table>
+
+            <div class="p-4 px-6 border-t bg-muted/20">
+                {{ $products->links('pagination::tailwind') }}
             </div>
-        @endif
-    </section>
-@endsection
+        </x-ui.card>
+    </div>
+</x-layouts.admin>

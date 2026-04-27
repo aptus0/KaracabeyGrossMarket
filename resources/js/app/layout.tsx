@@ -1,38 +1,30 @@
 import type { Metadata } from "next";
+import { Roboto } from "next/font/google";
 import { MarketingPixels } from "@/app/_components/MarketingPixels";
 import { Providers } from "@/app/providers";
+import { buildMetadata, siteUrl } from "@/lib/seo";
 import "./globals.css";
 
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700", "900"],
+  display: "swap",
+  variable: "--font-sans-roboto",
+});
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://karacabeygrossmarket.com"),
-  title: {
-    default: "Karacabey Gross Market",
-    template: "%s | Karacabey Gross Market",
-  },
-  description:
-    "Karacabey Gross Market online market, hızlı teslimat, güvenli ödeme ve yerel ürün alışverişi.",
+  metadataBase: new URL(siteUrl),
+  ...buildMetadata({
+    title: "Karacabey Gross Market",
+    description: "Karacabey Gross Market online market, hızlı teslimat, güvenli ödeme ve yerel ürün alışverişi.",
+    path: "/",
+    keywords: ["Karacabey market", "yerel ürün alışverişi", "online market deneyimi"],
+  }),
   applicationName: "Karacabey Gross Market",
-  alternates: {
-    canonical: "/",
-  },
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
     apple: "/assets/kgm-favicon-256.png",
-  },
-  openGraph: {
-    title: "Karacabey Gross Market",
-    description:
-      "Karacabey için profesyonel online gross market deneyimi.",
-    url: "https://karacabeygrossmarket.com",
-    siteName: "Karacabey Gross Market",
-    locale: "tr_TR",
-    type: "website",
-    images: ["/assets/kgm-logo.png"],
-  },
-  robots: {
-    index: true,
-    follow: true,
   },
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION,
@@ -46,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr">
-      <body className="s0">
+      <body className={`s0 ${roboto.variable}`}>
         <Providers>
           {children}
           <MarketingPixels />

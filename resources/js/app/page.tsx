@@ -1,11 +1,23 @@
+import type { Metadata } from "next";
 import { CampaignBanner } from "@/app/_components/CampaignBanner";
 import { CategoryCard } from "@/app/_components/CategoryCard";
 import { HomeCarousel } from "@/app/_components/HomeCarousel";
+import { MobileCatalogRedirect } from "@/app/_components/MobileCatalogRedirect";
 import { PageBuilderBlock } from "@/app/_components/PageBuilderBlock";
 import { ProductSlider } from "@/app/_components/ProductSlider";
 import { SeoHead } from "@/app/_components/SeoHead";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
-import { categories, products } from "@/lib/catalog";
+import { categories } from "@/lib/catalog";
+import { buildMetadata } from "@/lib/seo";
+import { fetchFeaturedStorefrontProducts } from "@/lib/storefront-products";
+
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = buildMetadata({
+  title: "Ana Sayfa",
+  description: "Karacabey Gross Market ana sayfası: hızlı teslimat, güvenli ödeme, kampanyalar ve öne çıkan ürünler.",
+  path: "/",
+  keywords: ["ana sayfa", "kampanyalar", "öne çıkan ürünler", "günlük market alışverişi"],
+});
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -16,9 +28,12 @@ const jsonLd = {
   paymentAccepted: "Credit Card, Debit Card",
 };
 
-export default function Home() {
+export default async function Home() {
+  const featuredProducts = await fetchFeaturedStorefrontProducts(8);
+
   return (
     <GuestLayout>
+      <MobileCatalogRedirect />
       <SeoHead data={jsonLd} />
 
       <main>
@@ -47,7 +62,7 @@ export default function Home() {
             <p className="eyebrow">Bugünün seçimi</p>
             <h2>Hızlı sepet ürünleri</h2>
           </div>
-          <ProductSlider products={products} />
+          <ProductSlider products={featuredProducts} />
         </section>
 
         <PageBuilderBlock eyebrow="Operasyon" title="Karacabey içinde düzenli teslimat">

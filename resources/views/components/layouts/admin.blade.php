@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name', 'Karacabey Gross Market Admin') }}</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/admin.js'])
 </head>
 <body class="min-h-screen bg-background font-sans antialiased text-foreground">
-    <div class="flex min-h-screen w-full" x-data="{ sidebarOpen: false }">
+    <div class="flex min-h-screen w-full" data-admin-shell data-sidebar-open="false">
         <!-- Sidebar -->
         <x-admin.sidebar />
 
@@ -15,7 +15,7 @@
         <div class="flex-1 flex flex-col min-w-0">
             <!-- Header -->
             <header class="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b bg-background px-6 shadow-sm">
-                <button @click="sidebarOpen = !sidebarOpen" class="md:hidden">
+                <button type="button" data-sidebar-toggle class="md:hidden">
                     <x-lucide-menu class="h-6 w-6" />
                 </button>
                 <div class="flex-1">
@@ -38,5 +38,7 @@
             </main>
         </div>
     </div>
+
+    <x-ui.toaster />
 </body>
 </html>

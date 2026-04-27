@@ -4,6 +4,7 @@ import { Breadcrumb } from "@/app/_components/Breadcrumb";
 import { SeoHead } from "@/app/_components/SeoHead";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
 import { findStorePage, storePages } from "@/lib/content";
+import { buildMetadata } from "@/lib/seo";
 
 type CorporatePageProps = {
   params: Promise<{
@@ -24,16 +25,13 @@ export async function generateMetadata({ params }: CorporatePageProps): Promise<
   }
 
   return {
-    title: page.seo.title,
-    description: page.seo.description,
-    alternates: {
-      canonical: `/kurumsal/${page.slug}`,
-    },
-    openGraph: {
+    ...buildMetadata({
       title: page.seo.title,
       description: page.seo.description,
+      path: `/kurumsal/${page.slug}`,
       type: "article",
-    },
+      keywords: [page.group, page.title, "kurumsal içerik", "bilgilendirme sayfası"],
+    }),
   };
 }
 

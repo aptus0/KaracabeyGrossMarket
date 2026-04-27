@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { KgmProduct } from "@/lib/catalog";
 import { AddToCartButton } from "@/app/_components/AddToCartButton";
@@ -11,16 +10,23 @@ type ProductCardProps = {
 };
 
 export function ProductCard({ product, priority = false }: ProductCardProps) {
+  const imageUrl = safeImageUrl(product.image);
+
   return (
     <article className="product-card">
       <Link className="product-card__image" href={`/product/${product.slug}`}>
-        <Image
-          src={product.image}
-          alt={product.name}
-          fill
-          priority={priority}
-          sizes="(max-width: 620px) 50vw, (max-width: 980px) 33vw, 25vw"
-        />
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl}
+            alt={product.name}
+            loading={priority ? "eager" : "lazy"}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-sm font-black text-[#6B7177]">
+            KGM
+          </div>
+        )}
       </Link>
       <div className="product-card__body">
         <div className="product-card__meta">
@@ -36,4 +42,22 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
       </div>
     </article>
   );
+}
+
+function safeImageUrl(url?: string | null) {
+  if (!url) {
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(url, "http://localhost");
+
+    if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
+      return url;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }

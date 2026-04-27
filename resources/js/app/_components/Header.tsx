@@ -19,6 +19,7 @@ import { MegaMenu } from "@/app/_components/MegaMenu";
 import { NavIcon } from "@/app/_components/NavIcon";
 import { SearchBar } from "@/app/_components/SearchBar";
 import { useAuthStore } from "@/lib/auth-store";
+import { cartItemCount } from "@/lib/cart";
 import { useCartStore } from "@/lib/cart-store";
 import {
   defaultNavigation,
@@ -39,7 +40,8 @@ type HeaderProps = {
 export function Header({ compact = false }: HeaderProps) {
   const [navigation, setNavigation] = useState<NavigationData>(defaultNavigation);
   const [menuOpen, setMenuOpen] = useState(false);
-  const cartCount = useCartStore((state) => state.count());
+  const cartCount = useCartStore((state) => cartItemCount(state.items));
+  const isCartOpen = useCartStore((state) => state.isSheetOpen);
   const openCartSheet = useCartStore((state) => state.openSheet);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
@@ -129,6 +131,8 @@ export function Header({ compact = false }: HeaderProps) {
             type="button"
             className="header-action header-action--cart"
             aria-label="Sepet"
+            aria-expanded={isCartOpen}
+            aria-haspopup="dialog"
             onClick={openCartSheet}
           >
             <ShoppingCart size={20} />

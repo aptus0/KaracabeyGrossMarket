@@ -8,7 +8,10 @@ import { ProductPurchasePanel } from "@/app/_components/ProductPurchasePanel";
 import { ProductSlider } from "@/app/_components/ProductSlider";
 import { SeoHead } from "@/app/_components/SeoHead";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
-import { findProduct, products } from "@/lib/catalog";
+import { buildMetadata, siteUrl } from "@/lib/seo";
+import { fetchStorefrontProduct, fetchStorefrontProducts } from "@/lib/storefront-products";
+
+export const dynamic = "force-dynamic";
 
 type ProductPageProps = {
   params: Promise<{
@@ -16,44 +19,53 @@ type ProductPageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return products.map((product) => ({ slug: product.slug }));
-}
-
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = findProduct(slug);
+  const product = await fetchStorefrontProduct(slug);
 
   if (!product) {
     return {};
   }
 
   return {
-    title: product.name,
-    description: `${product.name} Karacabey Gross Market online sipariş.`,
-    openGraph: {
-      title: `${product.name} | Karacabey Gross Market`,
-      description: product.description,
-      images: [product.image],
-    },
+    ...buildMetadata({
+      title: product.name,
+      description: product.description || `${product.name} Karacabey Gross Market online sipariş.`,
+      path: `/product/${product.slug}`,
+      image: product.image,
+      keywords: [product.name, product.brand, product.category, "ürün detay", "satın al"],
+    }),
   };
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const product = findProduct(slug);
+  const product = await fetchStorefrontProduct(slug);
 
   if (!product) {
     notFound();
   }
+
+  const categorySlug = product.category !== "genel" ? product.category : undefined;
+  const { products: relatedCandidates } = await fetchStorefrontProducts({
+    category: categorySlug,
+    perPage: 8,
+  });
+  const primaryRelatedProducts = relatedCandidates.filter((item) => item.slug !== product.slug).slice(0, 8);
+  const relatedProducts = primaryRelatedProducts.length > 0
+    ? primaryRelatedProducts
+    : (await fetchStorefrontProducts({ perPage: 8 })).products.filter((item) => item.slug !== product.slug).slice(0, 8);
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     brand: product.brand,
+    sku: product.slug,
+    category: product.category,
+    url: `${siteUrl}/product/${product.slug}`,
     image: product.image,
     description: product.description,
     offers: {
@@ -99,7 +111,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <p className="eyebrow">Benzer ürünler</p>
             <h2>Sepete yakışanlar</h2>
           </div>
-          <ProductSlider products={products.filter((item) => item.slug !== product.slug)} />
+          <ProductSlider products={relatedProducts} />
         </section>
       </main>
     </GuestLayout>

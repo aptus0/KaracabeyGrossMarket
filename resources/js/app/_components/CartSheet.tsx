@@ -12,16 +12,18 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/app/_components/ui/sheet";
+import { cartItemCount } from "@/lib/cart";
 import { useCartStore } from "@/lib/cart-store";
 
 export function CartSheet() {
   const isOpen = useCartStore((state) => state.isSheetOpen);
   const items = useCartStore((state) => state.items);
+  const openSheet = useCartStore((state) => state.openSheet);
   const closeSheet = useCartStore((state) => state.closeSheet);
-  const count = useCartStore((state) => state.count());
+  const count = useCartStore((state) => cartItemCount(state.items));
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => (open ? useCartStore.getState().openSheet() : closeSheet())}>
+    <Sheet open={isOpen} onOpenChange={(open) => (open ? openSheet() : closeSheet())}>
       <SheetContent side="right" className="w-full max-w-[440px]">
         <SheetHeader>
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FFF0E0] text-[#FF7A00]">

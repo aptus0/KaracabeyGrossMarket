@@ -5,14 +5,18 @@ import { CargoTrackingBox } from "@/app/_components/CargoTrackingBox";
 import { OrderCard } from "@/app/_components/OrderCard";
 import { AppLayout } from "@/app/_layouts/AppLayout";
 import { accountAddresses, accountOrders } from "@/lib/catalog";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMetadata({
   title: "Hesabım",
+  description: "Karacabey Gross Market hesap paneli, siparişler ve adresler ekranı.",
+  path: "/account",
+  keywords: ["hesabım", "siparişlerim", "adreslerim"],
   robots: {
     index: false,
     follow: false,
   },
-};
+});
 
 export default function AccountPage() {
   return (

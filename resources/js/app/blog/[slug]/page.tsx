@@ -2,8 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { SeoHead } from "@/app/_components/SeoHead";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
 import { blogPosts, findBlogPost } from "@/lib/blog";
+import { buildMetadata, siteUrl } from "@/lib/seo";
 
 type BlogDetailPageProps = {
   params: Promise<{
@@ -24,13 +26,14 @@ export async function generateMetadata({ params }: BlogDetailPageProps): Promise
   }
 
   return {
-    title: post.seo.title,
-    description: post.seo.description,
-    openGraph: {
+    ...buildMetadata({
       title: post.seo.title,
       description: post.seo.description,
-      images: [post.heroImage],
-    },
+      path: `/blog/${post.slug}`,
+      image: post.heroImage,
+      type: "article",
+      keywords: [...post.seo.keywords, post.category, post.readTime, "blog detayı", "Karacabey Gross Market"],
+    }),
   };
 }
 
@@ -42,8 +45,28 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     notFound();
   }
 
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt,
+    datePublished: post.publishedAt,
+    dateModified: post.publishedAt,
+    inLanguage: "tr-TR",
+    articleSection: post.category,
+    image: post.heroImage,
+    keywords: post.seo.keywords.join(", "),
+    mainEntityOfPage: `${siteUrl}/blog/${post.slug}`,
+    publisher: {
+      "@type": "Organization",
+      name: "Karacabey Gross Market",
+      url: siteUrl,
+    },
+  };
+
   return (
     <GuestLayout>
+      <SeoHead data={articleSchema} />
       <main className="content-band">
         <article className="mx-auto grid w-full max-w-[980px] gap-8">
           <Link href="/blog" className="text-sm font-black uppercase tracking-[0.14em] text-[#FF7A00]">

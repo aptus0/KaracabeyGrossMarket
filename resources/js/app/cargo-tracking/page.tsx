@@ -3,14 +3,18 @@ import Link from "next/link";
 
 import { CargoTrackingBox } from "@/app/_components/CargoTrackingBox";
 import { AppLayout } from "@/app/_layouts/AppLayout";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMetadata({
   title: "Kargo Takip",
+  description: "Karacabey Gross Market sipariş teslimat ve kargo takip ekranı.",
+  path: "/cargo-tracking",
+  keywords: ["kargo takip", "teslimat", "sipariş durumu"],
   robots: {
     index: false,
     follow: false,
   },
-};
+});
 
 export default function CargoTrackingPage() {
   return (

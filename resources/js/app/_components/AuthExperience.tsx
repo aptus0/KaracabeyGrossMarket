@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LockKeyhole, MapPin, ShieldCheck, Truck } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
@@ -156,62 +156,29 @@ export function AuthExperience({ mode }: AuthExperienceProps) {
   }
 
   return (
-    <section className="grid w-full gap-6 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)]">
-      <Card className="overflow-hidden border-none bg-[linear-gradient(160deg,#FFF8F0_0%,#FFF1E1_45%,#FFFFFF_100%)] shadow-none">
-        <CardContent className="flex h-full flex-col justify-between gap-8 p-8 sm:p-10">
-          <div className="space-y-5">
-            <div className="inline-flex rounded-2xl border border-white/70 bg-white/85 p-3 shadow-sm">
-              <KgmLogo />
-            </div>
-            <div className="space-y-3">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#FF7A00]">
-                Karacabey Gross hesabı
-              </p>
-              <h1 className="text-3xl font-black leading-tight text-[#2B2F36] sm:text-4xl">
-                {mode === "login"
-                  ? "Siparişlerinize, favorilerinize ve kayıtlı adreslerinize tek yerden ulaşın."
-                  : "Daha hızlı checkout ve kayıtlı teslimat bilgileri için yeni hesabınızı oluşturun."}
-              </h1>
-              <p className="max-w-xl text-sm leading-7 text-[#5F6670] sm:text-base">
-                Güvenli ödeme, hızlı teslimat ve profesyonel müşteri akışını aynı hesap deneyiminde topladık.
-              </p>
-            </div>
-          </div>
+    <section className="w-full max-w-[480px]">
+      <Card className="border-[#E4E7EB] shadow-[0_18px_54px_rgba(43,47,54,0.08)]">
+        <CardHeader className="space-y-6 p-8 pb-6">
+          <Link href="/" className="mx-auto inline-flex rounded-2xl border border-[#EEF1F4] bg-white p-3">
+            <KgmLogo />
+          </Link>
 
-          <div className="grid gap-3">
-            <IntroItem
-              icon={<ShieldCheck size={18} />}
-              title="Güvenli oturum"
-              description="Hesap oturumunuz API token tabanlı olarak korunur ve gerektiğinde tek tıkla sonlandırılır."
-            />
-            <IntroItem
-              icon={<Truck size={18} />}
-              title="Daha hızlı teslimat"
-              description="Kayıtlı teslimat bilgileri ve sipariş geçmişiyle tekrar sipariş akışı çok daha kısa sürer."
-            />
-            <IntroItem
-              icon={<MapPin size={18} />}
-              title="Adres yönetimi"
-              description="Ev, iş ve operasyon noktalarınızı tek hesapta düzenleyip checkout sırasında hızla seçebilirsiniz."
-            />
+          <div className="space-y-3 text-center">
+            <div className="inline-flex w-fit rounded-full border border-[#FFE1C2] bg-[#FFF5EA] px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-[#FF7A00] mx-auto">
+              {mode === "login" ? "Hesaba giriş" : "Yeni üyelik"}
+            </div>
+            <CardTitle className="text-2xl font-black text-[#2B2F36] sm:text-3xl">
+              {mode === "login" ? "Giriş yapın" : "Hesabınızı oluşturun"}
+            </CardTitle>
+            <CardDescription className="mx-auto max-w-[360px] text-sm leading-6 text-[#5F6670]">
+              {mode === "login"
+                ? "Siparişlerinize ve kayıtlı teslimat bilgilerinize sade bir giriş ekranı ile ulaşın."
+                : "Hızlı checkout ve adres kaydı için dakikalar içinde yeni hesabınızı oluşturun."}
+            </CardDescription>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="space-y-3">
-          <div className="inline-flex w-fit rounded-full border border-[#FFE1C2] bg-[#FFF5EA] px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-[#FF7A00]">
-            {mode === "login" ? "Hesaba giriş" : "Yeni üyelik"}
-          </div>
-          <CardTitle>{mode === "login" ? "Giriş yapın" : "Hesabınızı oluşturun"}</CardTitle>
-          <CardDescription>
-            {mode === "login"
-              ? "Mevcut hesabınızla devam edin veya sosyal giriş hazır olduğunda tek dokunuşla bağlanın."
-              : "Kurumsal ve bireysel teslimatlarınız için modern hesap deneyimine hemen geçin."}
-          </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 p-8 pt-0">
           <div className="grid gap-3 sm:grid-cols-2">
             <ProviderButton
               busy={providersLoading}
@@ -283,47 +250,27 @@ export function AuthExperience({ mode }: AuthExperienceProps) {
             </Button>
           </form>
 
-          <div className="grid gap-3 rounded-2xl border border-dashed border-[#E4E7EB] bg-[#FAFBFC] p-4 text-sm text-[#5F6670]">
+          <div className="grid gap-3 rounded-2xl border border-[#E4E7EB] bg-[#FAFBFC] p-4 text-sm text-[#5F6670]">
             <p className="font-semibold text-[#2B2F36]">
               {mode === "login"
                 ? "Henüz hesabınız yok mu?"
                 : "Zaten bir hesabınız var mı?"}
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <Link
                 href={mode === "login" ? "/auth/register" : "/auth/login"}
                 className="font-black text-[#FF7A00]"
               >
                 {mode === "login" ? "Kayıt ekranına geç" : "Giriş ekranına dön"}
               </Link>
-              <Link href="/checkout" className="font-bold text-[#5F6670]">
-                Checkout’a git
+              <Link href="/" className="font-bold text-[#5F6670]">
+                Ana sayfaya dön
               </Link>
             </div>
           </div>
         </CardContent>
       </Card>
     </section>
-  );
-}
-
-function IntroItem({
-  icon,
-  title,
-  description,
-}: {
-  icon: ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="grid gap-2 rounded-2xl border border-white/70 bg-white/88 p-4 shadow-sm">
-      <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF0E0] text-[#FF7A00]">
-        {icon}
-      </div>
-      <strong className="text-sm font-black text-[#2B2F36]">{title}</strong>
-      <p className="text-sm leading-6 text-[#5F6670]">{description}</p>
-    </div>
   );
 }
 
