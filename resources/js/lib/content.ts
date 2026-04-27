@@ -68,6 +68,26 @@ export const storePages: StorePage[] = [
     },
   },
   {
+    slug: "uyelik-sozlesmesi",
+    title: "Üyelik Sözleşmesi",
+    group: "legal",
+    body: "Üyelik hesabı, sosyal giriş bağlama, sipariş geçmişi ve teslimat verilerinin kullanım çerçevesi bu sözleşmede açıklanır.",
+    seo: {
+      title: "Üyelik Sözleşmesi | Karacabey Gross Market",
+      description: "Karacabey Gross Market üyelik sözleşmesi ve hesap kullanım koşulları.",
+    },
+  },
+  {
+    slug: "odeme-guvenligi",
+    title: "Ödeme Güvenliği",
+    group: "legal",
+    body: "Ödeme işlemleri SSL, 3D Secure ve sağlayıcı güvenlik katmanlarıyla korunur; kart verileri mağaza uygulamasında düz metin olarak saklanmaz.",
+    seo: {
+      title: "Ödeme Güvenliği | Karacabey Gross Market",
+      description: "Karacabey Gross Market ödeme güvenliği, şifreleme ve doğrulama süreçleri.",
+    },
+  },
+  {
     slug: "iade-ve-degisim",
     title: "İade ve Değişim",
     group: "support",
@@ -85,6 +105,16 @@ export const storePages: StorePage[] = [
     seo: {
       title: "SSS | Karacabey Gross Market",
       description: "Karacabey Gross Market sık sorulan sorular.",
+    },
+  },
+  {
+    slug: "teslimat-bolgeleri",
+    title: "Teslimat Bölgeleri",
+    group: "support",
+    body: "Karacabey merkez, çevre mahalleler ve kurumsal teslimat noktaları için aktif dağıtım saatleri ve uygunluk bilgileri bu sayfada özetlenir.",
+    seo: {
+      title: "Teslimat Bölgeleri | Karacabey Gross Market",
+      description: "Karacabey Gross Market teslimat bölgeleri ve hizmet kapsamı bilgileri.",
     },
   },
 ];

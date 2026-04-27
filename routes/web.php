@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Paytr\CheckoutPageController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +25,14 @@ Route::get('/login', fn () => redirect()->route('admin.login'))->name('login');
 
 Route::get('/p/{order:checkout_ref}', [CheckoutPageController::class, 'show'])
     ->name('checkout.session');
+
+Route::get('/oauth/{provider}/redirect', [SocialAuthController::class, 'redirect'])
+    ->whereIn('provider', ['google', 'facebook'])
+    ->name('oauth.redirect');
+
+Route::get('/oauth/{provider}/callback', [SocialAuthController::class, 'callback'])
+    ->whereIn('provider', ['google', 'facebook'])
+    ->name('oauth.callback');
 
 Route::prefix('admin')->name('admin.')->group(function (): void {
     Route::middleware('guest')->group(function (): void {

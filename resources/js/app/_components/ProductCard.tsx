@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { KgmProduct } from "@/lib/catalog";
+import { AddToCartButton } from "@/app/_components/AddToCartButton";
 import { FavoriteButton } from "@/app/_components/FavoriteButton";
 import { PriceBox } from "@/app/_components/PriceBox";
 
@@ -31,9 +32,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
         </Link>
         <p>{product.brand}</p>
         <PriceBox price={product.price} oldPrice={product.oldPrice} unit={product.unit} />
-        <Link className="product-card__action" href="/checkout">
-          Sepete Ekle
-        </Link>
+        <AddToCartButton productSlug={product.slug} className="w-full" />
       </div>
     </article>
   );

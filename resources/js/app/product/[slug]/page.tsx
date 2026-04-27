@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/app/_components/Breadcrumb";
-import { FavoriteButton } from "@/app/_components/FavoriteButton";
 import { PriceBox } from "@/app/_components/PriceBox";
 import { ProductGallery } from "@/app/_components/ProductGallery";
+import { ProductPurchasePanel } from "@/app/_components/ProductPurchasePanel";
 import { ProductSlider } from "@/app/_components/ProductSlider";
-import { QuantitySelector } from "@/app/_components/QuantitySelector";
 import { SeoHead } from "@/app/_components/SeoHead";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
 import { findProduct, products } from "@/lib/catalog";
@@ -88,16 +87,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <span>Stok</span>
               <strong>{product.stock} adet</strong>
             </div>
-            <div className="purchase-box">
-              <form action="/checkout">
-                <input type="hidden" name="product" value={product.slug} />
-                <QuantitySelector />
-                <button className="primary-action" type="submit">
-                  Sepete Ekle
-                </button>
-              </form>
-              <FavoriteButton productSlug={product.slug} />
-            </div>
+            <ProductPurchasePanel productSlug={product.slug} />
             <Link className="secondary-action" href="/products">
               Ürünlere Dön
             </Link>

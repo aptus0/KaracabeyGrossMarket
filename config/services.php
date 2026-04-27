@@ -40,10 +40,23 @@ return [
         'ads_id' => env('GOOGLE_ADS_ID'),
         'ads_conversion_label' => env('GOOGLE_ADS_CONVERSION_LABEL'),
         'site_verification' => env('GOOGLE_SITE_VERIFICATION'),
+        'oauth_client_id' => env('GOOGLE_CLIENT_ID'),
+        'oauth_client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'oauth_redirect' => env('GOOGLE_REDIRECT_URI', rtrim(env('APP_URL', 'http://localhost'), '/').'/oauth/google/callback'),
     ],
 
     'meta' => [
         'pixel_id' => env('META_PIXEL_ID'),
+    ],
+
+    'facebook' => [
+        'client_id' => env('FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
+        'redirect' => env('FACEBOOK_REDIRECT_URI', rtrim(env('APP_URL', 'http://localhost'), '/').'/oauth/facebook/callback'),
+    ],
+
+    'storefront' => [
+        'url' => env('STOREFRONT_URL', 'http://127.0.0.1:3000'),
     ],
 
 ];

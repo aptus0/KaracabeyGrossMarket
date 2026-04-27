@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   User,
 } from "lucide-react";
+import { useCartStore } from "@/lib/cart-store";
 
 const bottomNavItems = [
   {
@@ -53,6 +54,7 @@ const bottomNavItems = [
 
 export function BottomNavigation() {
   const pathname = usePathname();
+  const cartCount = useCartStore((state) => state.count());
 
   return (
     <nav className="bottom-nav" aria-label="Mobil app bar">
@@ -75,6 +77,9 @@ export function BottomNavigation() {
           >
             <Icon size={18} />
             <span>{item.label}</span>
+            {item.href === "/checkout" && cartCount > 0 ? (
+              <small className="bottom-nav__badge">{cartCount}</small>
+            ) : null}
           </Link>
         );
       })}
