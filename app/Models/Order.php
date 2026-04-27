@@ -17,6 +17,7 @@ class Order extends Model
         'tenant_id',
         'user_id',
         'merchant_oid',
+        'checkout_ref',
         'status',
         'currency',
         'subtotal_cents',

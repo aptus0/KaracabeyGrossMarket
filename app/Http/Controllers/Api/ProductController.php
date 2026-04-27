@@ -8,20 +8,27 @@ use App\Models\Product;
 use App\Support\TenantResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
     public function index(Request $request, TenantResolver $tenants): JsonResponse
     {
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:80'],
+            'category' => ['nullable', 'string', 'max:120'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:48'],
+        ]);
+
         $tenant = $tenants->resolve($request);
-        $perPage = min(max((int) $request->integer('per_page', 12), 1), 48);
+        $perPage = (int) ($validated['per_page'] ?? 12);
 
         $query = Product::query()
             ->whereBelongsTo($tenant)
             ->where('is_active', true)
             ->with('categories')
-            ->when($request->filled('q'), function ($query) use ($request): void {
-                $term = '%'.$request->string('q')->trim()->toString().'%';
+            ->when(! empty($validated['q']), function ($query) use ($validated): void {
+                $term = '%'.addcslashes(Str::squish((string) $validated['q']), '\\%_').'%';
                 $query->where(function ($query) use ($term): void {
                     $query->where('name', 'like', $term)
                         ->orWhere('brand', 'like', $term)
@@ -29,11 +36,11 @@ class ProductController extends Controller
                 });
             });
 
-        if ($request->filled('category')) {
+        if (! empty($validated['category'])) {
             $category = Category::query()
                 ->whereBelongsTo($tenant)
                 ->where('is_active', true)
-                ->where('slug', $request->string('category')->toString())
+                ->where('slug', $validated['category'])
                 ->first();
 
             $query->when(
@@ -62,6 +69,40 @@ class ProductController extends Controller
         return response()->json(['data' => $this->serialize($product)]);
     }
 
+    public function suggest(Request $request, TenantResolver $tenants): JsonResponse
+    {
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:80'],
+        ]);
+
+        $tenant = $tenants->resolve($request);
+        $term = Str::squish((string) ($validated['q'] ?? ''));
+
+        if (mb_strlen($term) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $likeTerm = '%'.addcslashes($term, '\\%_').'%';
+
+        $products = Product::query()
+            ->whereBelongsTo($tenant)
+            ->where('is_active', true)
+            ->with('categories')
+            ->where(function ($query) use ($likeTerm): void {
+                $query->where('name', 'like', $likeTerm)
+                    ->orWhere('brand', 'like', $likeTerm)
+                    ->orWhere('barcode', 'like', $likeTerm);
+            })
+            ->orderByRaw('case when name like ? then 0 else 1 end', [$likeTerm])
+            ->latest()
+            ->limit(6)
+            ->get();
+
+        return response()->json([
+            'data' => $products->map(fn (Product $product): array => $this->serializeSuggestion($product))->values(),
+        ]);
+    }
+
     private function serialize(Product $product): array
     {
         return [
@@ -74,7 +115,7 @@ class ProductController extends Controller
             'price' => $product->formattedPrice(),
             'compare_at_price_cents' => $product->compare_at_price_cents,
             'stock_quantity' => $product->stock_quantity,
-            'image_url' => $product->image_url,
+            'image_url' => $this->safeImageUrl($product->image_url),
             'seo' => $product->seo,
             'categories' => $product->categories
                 ->map(fn (Category $category): array => [
@@ -84,5 +125,27 @@ class ProductController extends Controller
                 ])
                 ->values(),
         ];
+    }
+
+    private function serializeSuggestion(Product $product): array
+    {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'brand' => $product->brand,
+            'price' => $product->formattedPrice(),
+            'image_url' => $this->safeImageUrl($product->image_url),
+            'category' => $product->categories->first()?->name,
+        ];
+    }
+
+    private function safeImageUrl(?string $url): ?string
+    {
+        if (! $url) {
+            return null;
+        }
+
+        return str_starts_with($url, 'https://') || str_starts_with($url, 'http://') ? $url : null;
     }
 }

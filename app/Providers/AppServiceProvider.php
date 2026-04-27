@@ -51,6 +51,6 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?: $request->ip()));
         RateLimiter::for('payments', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->id ?: $request->ip()));
-        RateLimiter::for('paytr-callback', fn (Request $request) => Limit::perMinute(120)->by($request->ip()));
+        RateLimiter::for('payment-callback', fn (Request $request) => Limit::perMinute(120)->by($request->ip()));
     }
 }

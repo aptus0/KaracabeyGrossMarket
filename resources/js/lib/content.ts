@@ -21,7 +21,7 @@ export const storePages: StorePage[] = [
     slug: "hakkimizda",
     title: "Hakkımızda",
     group: "corporate",
-    body: "Karacabey Gross Market, Karacabey ve çevresi için hızlı market siparişi, güvenli PayTR ödeme ve düzenli teslimat deneyimi sunar.",
+    body: "Karacabey Gross Market, Karacabey ve çevresi için hızlı market siparişi, güvenli ödeme ve düzenli teslimat deneyimi sunar.",
     seo: {
       title: "Hakkımızda | Karacabey Gross Market",
       description: "Karacabey Gross Market kurumsal bilgileri, hizmet yaklaşımı ve online market altyapısı.",

@@ -26,7 +26,7 @@ class PaymentMethodController extends Controller
 
         return response()->json([
             'data' => $methods,
-            'paytr' => $remote,
+            'gateway' => $remote,
         ]);
     }
 

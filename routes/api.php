@@ -19,6 +19,7 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:api');
 
     Route::get('/products', [ProductController::class, 'index'])->middleware('throttle:api');
+    Route::get('/products/suggest', [ProductController::class, 'suggest'])->middleware('throttle:api');
     Route::get('/products/{slug}', [ProductController::class, 'show'])->middleware('throttle:api');
     Route::get('/categories', [CategoryController::class, 'index'])->middleware('throttle:api');
     Route::get('/categories/{slug}', [CategoryController::class, 'show'])->middleware('throttle:api');
@@ -27,6 +28,7 @@ Route::prefix('v1')->group(function (): void {
     Route::get('/content/pages/{slug}', [ContentController::class, 'page'])->middleware('throttle:api');
     Route::get('/content/campaigns', [ContentController::class, 'campaigns'])->middleware('throttle:api');
     Route::get('/content/marketing', [ContentController::class, 'marketing'])->middleware('throttle:api');
+    Route::get('/content/navigation', [ContentController::class, 'navigation'])->middleware('throttle:api');
 
     Route::get('/cart', [CartController::class, 'show'])->middleware('throttle:api');
     Route::post('/cart/items', [CartController::class, 'store'])->middleware('throttle:api');
@@ -34,7 +36,9 @@ Route::prefix('v1')->group(function (): void {
     Route::delete('/cart/items/{cartItem}', [CartController::class, 'destroy'])->middleware('throttle:api');
     Route::delete('/cart', [CartController::class, 'clear'])->middleware('throttle:api');
 
-    Route::post('/checkout/paytr', [CheckoutController::class, 'store'])->middleware('throttle:payments');
+    Route::post('/c', [CheckoutController::class, 'store'])
+        ->middleware('throttle:payments')
+        ->name('checkout.store');
 
     Route::middleware(['auth:api', 'throttle:api'])->group(function (): void {
         Route::get('/auth/me', [AuthController::class, 'me']);
@@ -53,4 +57,4 @@ Route::prefix('v1')->group(function (): void {
     });
 });
 
-Route::post('/paytr/callback', CallbackController::class)->middleware('throttle:paytr-callback');
+Route::post('/cb/p', CallbackController::class)->middleware('throttle:payment-callback');

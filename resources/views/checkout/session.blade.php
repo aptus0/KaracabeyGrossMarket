@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
     <title>Karacabey Gross Market Guvenli Odeme</title>
-    <link rel="stylesheet" href="{{ asset('assets/kgm-paytr.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/kgm-secure-pay.css') }}">
 </head>
 <body class="k0">
-    <main class="k1" aria-label="PayTR guvenli odeme">
+    <main class="k1" aria-label="Guvenli odeme">
         <section class="k2">
             <div class="k3">
                 <p class="k4">Karacabey Gross Market</p>
@@ -21,8 +21,8 @@
         <section class="k8">
             <iframe
                 src="{{ $iframeSrc }}"
-                id="paytriframe"
-                title="PayTR guvenli odeme formu"
+                id="securepayframe"
+                title="Guvenli odeme formu"
                 frameborder="0"
                 scrolling="no"
                 class="k9"
@@ -32,6 +32,6 @@
     </main>
 
     <script src="https://www.paytr.com/js/iframeResizer.min.js" defer></script>
-    <script src="{{ asset('assets/kgm-paytr.js') }}" defer></script>
+    <script src="{{ asset('assets/kgm-secure-pay.js') }}" defer></script>
 </body>
 </html>

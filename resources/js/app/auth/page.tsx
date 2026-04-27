@@ -8,7 +8,7 @@ export default function AuthPage() {
         <p className="eyebrow">Karacabey Gross hesabı</p>
         <h1>Hızlı giriş, güvenli checkout.</h1>
         <p>
-          Siparişlerinizi, kayıtlı PayTR kart tokenlarınızı ve teslimat bilgilerinizi tek alanda yönetin.
+          Siparişlerinizi, kayıtlı kartlarınızı ve teslimat bilgilerinizi tek alanda yönetin.
         </p>
         <div className="split-actions">
           <Link className="primary-action" href="/auth/login">

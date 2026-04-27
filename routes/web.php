@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\HomepageBlockController as AdminHomepageBlockController;
 use App\Http\Controllers\Admin\MarketingSettingController as AdminMarketingSettingController;
+use App\Http\Controllers\Admin\NavigationItemController as AdminNavigationItemController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
@@ -21,8 +22,8 @@ Route::get('/', fn () => response()->json([
 
 Route::get('/login', fn () => redirect()->route('admin.login'))->name('login');
 
-Route::get('/checkout/paytr/{order:merchant_oid}', [CheckoutPageController::class, 'show'])
-    ->name('paytr.checkout');
+Route::get('/p/{order:checkout_ref}', [CheckoutPageController::class, 'show'])
+    ->name('checkout.session');
 
 Route::prefix('admin')->name('admin.')->group(function (): void {
     Route::middleware('guest')->group(function (): void {
@@ -39,7 +40,12 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::resource('payments', AdminPaymentController::class)->only(['index']);
         Route::resource('users', AdminUserController::class)->only(['index']);
         Route::resource('pages', AdminPageController::class)->only(['index', 'create', 'store', 'edit', 'update']);
-        Route::resource('homepage-blocks', AdminHomepageBlockController::class)->only(['index', 'store']);
+        Route::resource('homepage-blocks', AdminHomepageBlockController::class)
+            ->only(['index', 'store', 'update', 'destroy'])
+            ->parameters(['homepage-blocks' => 'homepageBlock']);
+        Route::resource('navigation', AdminNavigationItemController::class)
+            ->only(['index', 'store', 'update', 'destroy'])
+            ->parameters(['navigation' => 'navigationItem']);
         Route::resource('campaigns', AdminCampaignController::class)->only(['index', 'store']);
         Route::post('coupons', [AdminCampaignController::class, 'storeCoupon'])->name('coupons.store');
         Route::get('marketing', [AdminMarketingSettingController::class, 'edit'])->name('marketing.edit');

@@ -57,7 +57,7 @@ class PaytrClient
         $response = $this->postForm(config('paytr.endpoints.iframe_token'), $payload);
 
         if (($response['status'] ?? null) !== 'success' || empty($response['token'])) {
-            throw new RuntimeException((string) ($response['reason'] ?? 'PayTR iframe token olusturulamadi.'));
+            throw new RuntimeException((string) ($response['reason'] ?? 'Odeme oturumu olusturulamadi.'));
         }
 
         return [
@@ -196,11 +196,11 @@ class PaytrClient
                 ->throw()
                 ->json();
         } catch (ConnectionException|RequestException $exception) {
-            throw new RuntimeException('PayTR baglanti hatasi: '.$exception->getMessage(), previous: $exception);
+            throw new RuntimeException('Odeme servisi baglanti hatasi: '.$exception->getMessage(), previous: $exception);
         }
 
         if (! is_array($response)) {
-            throw new RuntimeException('PayTR gecersiz yanit dondurdu.');
+            throw new RuntimeException('Odeme servisi gecersiz yanit dondurdu.');
         }
 
         return $response;

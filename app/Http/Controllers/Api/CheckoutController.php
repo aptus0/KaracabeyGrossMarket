@@ -57,11 +57,13 @@ class CheckoutController extends Controller
 
             $subtotal = 0;
             $merchantOid = $this->makeMerchantOid();
+            $checkoutRef = $this->makeCheckoutRef();
 
             $order = Order::query()->create([
                 'tenant_id' => $tenant->id,
                 'user_id' => $user?->id,
                 'merchant_oid' => $merchantOid,
+                'checkout_ref' => $checkoutRef,
                 'status' => OrderStatus::AwaitingPayment,
                 'currency' => config('paytr.currency', 'TL'),
                 'subtotal_cents' => 0,
@@ -128,7 +130,7 @@ class CheckoutController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'PayTR odeme oturumu baslatilamadi.',
+                'message' => 'Odeme oturumu baslatilamadi.',
                 'reason' => $exception->getMessage(),
             ], 502);
         }
@@ -144,7 +146,7 @@ class CheckoutController extends Controller
                 'currency' => $order->currency,
                 'iframe_token' => $iframe['token'],
                 'iframe_src' => $iframe['iframe_src'],
-                'blade_checkout_url' => route('paytr.checkout', $order->merchant_oid),
+                'checkout_url' => route('checkout.session', ['order' => $order->checkout_ref]),
             ],
         ], 201);
     }
@@ -216,5 +218,14 @@ class CheckoutController extends Controller
         } while (Order::query()->where('merchant_oid', $oid)->exists());
 
         return $oid;
+    }
+
+    private function makeCheckoutRef(): string
+    {
+        do {
+            $ref = Str::lower(Str::random(32));
+        } while (Order::query()->where('checkout_ref', $ref)->exists());
+
+        return $ref;
     }
 }

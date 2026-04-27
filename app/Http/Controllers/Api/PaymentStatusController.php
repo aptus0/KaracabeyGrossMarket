@@ -14,7 +14,7 @@ class PaymentStatusController extends Controller
         return response()->json([
             'data' => [
                 'local' => $payment->load('order', 'refunds'),
-                'paytr' => $paytr->status($payment->merchant_oid),
+                'gateway' => $paytr->status($payment->merchant_oid),
             ],
         ]);
     }

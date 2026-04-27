@@ -60,11 +60,11 @@ it('verifies paytr callback hash and marks payment as paid once', function (): v
         true
     ));
 
-    $this->post('/api/paytr/callback', $payload)
+    $this->post('/api/cb/p', $payload)
         ->assertOk()
         ->assertSeeText('OK');
 
-    $this->post('/api/paytr/callback', $payload)
+    $this->post('/api/cb/p', $payload)
         ->assertOk()
         ->assertSeeText('OK');
 
@@ -78,7 +78,7 @@ it('rejects callback payloads with an invalid hash', function (): void {
         'paytr.merchant_salt' => 'merchant-salt',
     ]);
 
-    $this->post('/api/paytr/callback', [
+    $this->post('/api/cb/p', [
         'merchant_oid' => 'KGM260426BAD',
         'status' => 'success',
         'total_amount' => '12500',

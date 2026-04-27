@@ -34,7 +34,7 @@ export default function AccountPage() {
         </article>
         <article className="info-card">
           <strong>Kayıtlı Kart</strong>
-          <p>Visa **** 4242, PayTR token ile saklanır.</p>
+          <p>Visa **** 4242 güvenli şekilde saklanır.</p>
         </article>
         <article className="info-card">
           <strong>Teslimat</strong>

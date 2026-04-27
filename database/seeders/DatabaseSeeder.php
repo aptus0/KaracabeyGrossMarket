@@ -6,6 +6,7 @@ use App\Models\Campaign;
 use App\Models\Category;
 use App\Models\HomepageBlock;
 use App\Models\MarketingSetting;
+use App\Models\NavigationItem;
 use App\Models\Page;
 use App\Models\Product;
 use App\Models\Tenant;
@@ -110,6 +111,63 @@ class DatabaseSeeder extends Seeder
             'sort_order' => 10,
             'is_active' => true,
         ]);
+
+        collect([
+            [
+                'title' => 'Karacabey Gross Market',
+                'subtitle' => 'Toptan fiyatına, güvenle alışveriş. Günlük market ihtiyaçlarınızı hızlı teslimatla kapınıza getirelim.',
+                'image_url' => '/assets/kgm-logo-4k.png',
+                'link_url' => '/products',
+                'link_label' => 'Alışverişe Başla',
+                'sort_order' => 1,
+            ],
+            [
+                'title' => 'Haftalık Gross Fırsatları',
+                'subtitle' => 'Temel gıda, kahvaltılık ve taze ürünlerde avantajlı sepetler.',
+                'image_url' => 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1600&q=85',
+                'link_url' => '/kampanyalar',
+                'link_label' => 'Kampanyaları Gör',
+                'sort_order' => 2,
+            ],
+        ])->each(fn (array $block): HomepageBlock => HomepageBlock::query()->updateOrCreate([
+            'tenant_id' => $tenant->id,
+            'type' => 'carousel_slide',
+            'title' => $block['title'],
+        ], $block + [
+            'tenant_id' => $tenant->id,
+            'type' => 'carousel_slide',
+            'is_active' => true,
+        ]));
+
+        collect([
+            ['placement' => 'top', 'label' => 'Kargo Takip', 'url' => '/cargo-tracking', 'icon' => 'package-search', 'sort_order' => 10],
+            ['placement' => 'top', 'label' => 'Adresim', 'url' => '/addresses', 'icon' => 'map-pin', 'sort_order' => 20],
+            ['placement' => 'header', 'label' => 'Ürünler', 'url' => '/products', 'icon' => 'grid', 'sort_order' => 10],
+            ['placement' => 'header', 'label' => 'Kampanyalar', 'url' => '/kampanyalar', 'icon' => 'tag', 'sort_order' => 20],
+            ['placement' => 'header', 'label' => 'Kurumsal', 'url' => '/kurumsal/hakkimizda', 'icon' => 'file-text', 'sort_order' => 30],
+            ['placement' => 'category', 'label' => 'Süt ve Kahvaltılık', 'url' => '/products?category=sut-ve-kahvaltilik', 'icon' => 'grid', 'sort_order' => 10],
+            ['placement' => 'category', 'label' => 'Fırın', 'url' => '/products?category=firin', 'icon' => 'grid', 'sort_order' => 20],
+            ['placement' => 'category', 'label' => 'Meyve Sebze', 'url' => '/products?category=meyve-sebze', 'icon' => 'grid', 'sort_order' => 30],
+            ['placement' => 'category', 'label' => 'Temel Gıda', 'url' => '/products?category=temel-gida', 'icon' => 'grid', 'sort_order' => 40],
+            ['placement' => 'category', 'label' => 'Tüm Ürünler', 'url' => '/products', 'icon' => 'grid', 'sort_order' => 50],
+            ['placement' => 'footer_primary', 'label' => 'Ürünler', 'url' => '/products', 'icon' => 'grid', 'sort_order' => 10],
+            ['placement' => 'footer_primary', 'label' => 'Kampanyalar', 'url' => '/kampanyalar', 'icon' => 'tag', 'sort_order' => 20],
+            ['placement' => 'footer_primary', 'label' => 'Sepet', 'url' => '/checkout', 'icon' => 'cart', 'sort_order' => 30],
+            ['placement' => 'footer_corporate', 'label' => 'Hakkımızda', 'url' => '/kurumsal/hakkimizda', 'icon' => 'file-text', 'sort_order' => 10],
+            ['placement' => 'footer_corporate', 'label' => 'İletişim', 'url' => '/kurumsal/iletisim', 'icon' => 'phone', 'sort_order' => 20],
+            ['placement' => 'footer_corporate', 'label' => 'KVKK', 'url' => '/kurumsal/kvkk', 'icon' => 'shield', 'sort_order' => 30],
+            ['placement' => 'footer_support', 'label' => 'İade ve Değişim', 'url' => '/kurumsal/iade-ve-degisim', 'icon' => 'package-search', 'sort_order' => 10],
+            ['placement' => 'footer_support', 'label' => 'SSS', 'url' => '/kurumsal/sss', 'icon' => 'file-text', 'sort_order' => 20],
+            ['placement' => 'footer_account', 'label' => 'Hesabım', 'url' => '/account', 'icon' => 'user', 'sort_order' => 10],
+            ['placement' => 'footer_account', 'label' => 'Favoriler', 'url' => '/favorites', 'icon' => 'heart', 'sort_order' => 20],
+        ])->each(fn (array $item): NavigationItem => NavigationItem::query()->updateOrCreate([
+            'tenant_id' => $tenant->id,
+            'placement' => $item['placement'],
+            'url' => $item['url'],
+        ], $item + [
+            'tenant_id' => $tenant->id,
+            'is_active' => true,
+        ]));
 
         $campaign = Campaign::query()->updateOrCreate([
             'tenant_id' => $tenant->id,

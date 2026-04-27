@@ -8,6 +8,11 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-primary: #FF7A00;
+    --color-brand-orange: #FF7A00;
+    --color-brand-dark: #2B2F36;
+    --color-brand-gray: #6B7177;
+    --color-brand-white: #FFFFFF;
 }
 .site-header {
   position: sticky;

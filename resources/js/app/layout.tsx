@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { MarketingPixels } from "@/app/_components/MarketingPixels";
+import { Providers } from "@/app/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,10 +10,15 @@ export const metadata: Metadata = {
     template: "%s | Karacabey Gross Market",
   },
   description:
-    "Karacabey Gross Market online market, hızlı teslimat, güvenli PayTR ödeme ve yerel ürün alışverişi.",
+    "Karacabey Gross Market online market, hızlı teslimat, güvenli ödeme ve yerel ürün alışverişi.",
   applicationName: "Karacabey Gross Market",
   alternates: {
     canonical: "/",
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/assets/kgm-favicon-256.png",
   },
   openGraph: {
     title: "Karacabey Gross Market",
@@ -22,6 +28,7 @@ export const metadata: Metadata = {
     siteName: "Karacabey Gross Market",
     locale: "tr_TR",
     type: "website",
+    images: ["/assets/kgm-logo.png"],
   },
   robots: {
     index: true,
@@ -40,8 +47,10 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <body className="s0">
-        {children}
-        <MarketingPixels />
+        <Providers>
+          {children}
+          <MarketingPixels />
+        </Providers>
       </body>
     </html>
   );

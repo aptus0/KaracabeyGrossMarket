@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/app/_components/Breadcrumb";
 import { FavoriteButton } from "@/app/_components/FavoriteButton";
 import { PriceBox } from "@/app/_components/PriceBox";
+import { ProductGallery } from "@/app/_components/ProductGallery";
 import { ProductSlider } from "@/app/_components/ProductSlider";
 import { QuantitySelector } from "@/app/_components/QuantitySelector";
 import { SeoHead } from "@/app/_components/SeoHead";
@@ -78,15 +78,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         />
 
         <section className="product-detail">
-          <div className="product-detail__image">
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              priority
-              sizes="(max-width: 980px) 100vw, 45vw"
-            />
-          </div>
+          <ProductGallery images={product.gallery ?? [product.image]} name={product.name} />
           <div className="product-detail__content">
             <span className="pill">{product.badge}</span>
             <h1>{product.name}</h1>

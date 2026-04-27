@@ -15,10 +15,9 @@
             @csrf
             <label>Tip
                 <select name="type">
-                    <option value="hero">Hero</option>
-                    <option value="campaign">Kampanya</option>
-                    <option value="content">Icerik</option>
-                    <option value="product_slider">Urun Slider</option>
+                    @foreach($types as $type)
+                        <option value="{{ $type }}">{{ $type }}</option>
+                    @endforeach
                 </select>
             </label>
             <label>Baslik
@@ -48,6 +47,13 @@
     </section>
 
     <section class="panel">
+        @foreach($blocks as $block)
+            <form id="block-{{ $block->id }}" action="{{ route('admin.homepage-blocks.update', $block) }}" method="post">
+                @csrf
+                @method('put')
+            </form>
+        @endforeach
+
         <table>
             <thead>
                 <tr>
@@ -56,19 +62,48 @@
                     <th>Link</th>
                     <th>Sira</th>
                     <th>Durum</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($blocks as $block)
                     <tr>
-                        <td>{{ $block->title }}<br><small>{{ $block->subtitle }}</small></td>
-                        <td>{{ $block->type }}</td>
-                        <td>{{ $block->link_label ?: '-' }}<br><small>{{ $block->link_url }}</small></td>
-                        <td>{{ $block->sort_order }}</td>
-                        <td>{{ $block->is_active ? 'Aktif' : 'Pasif' }}</td>
+                        <td>
+                            <input name="title" form="block-{{ $block->id }}" value="{{ $block->title }}" required>
+                            <textarea name="subtitle" form="block-{{ $block->id }}" placeholder="Alt metin">{{ $block->subtitle }}</textarea>
+                            <input name="image_url" form="block-{{ $block->id }}" value="{{ $block->image_url }}" placeholder="Gorsel URL">
+                        </td>
+                        <td>
+                            <select name="type" form="block-{{ $block->id }}">
+                                @foreach($types as $type)
+                                    <option value="{{ $type }}" @selected($block->type === $type)>{{ $type }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <input name="link_label" form="block-{{ $block->id }}" value="{{ $block->link_label }}" placeholder="Link etiketi">
+                            <input name="link_url" form="block-{{ $block->id }}" value="{{ $block->link_url }}" placeholder="/products">
+                        </td>
+                        <td><input name="sort_order" form="block-{{ $block->id }}" type="number" min="0" max="10000" value="{{ $block->sort_order }}"></td>
+                        <td>
+                            <label class="check-row">
+                                <input name="is_active" form="block-{{ $block->id }}" type="checkbox" value="1" @checked($block->is_active)>
+                                Aktif
+                            </label>
+                        </td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn primary" form="block-{{ $block->id }}" type="submit">Kaydet</button>
+                                <form action="{{ route('admin.homepage-blocks.destroy', $block) }}" method="post">
+                                    @csrf
+                                    @method('delete')
+                                    <button class="btn danger" type="submit">Sil</button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5">Blok yok.</td></tr>
+                    <tr><td colspan="6">Blok yok.</td></tr>
                 @endforelse
             </tbody>
         </table>

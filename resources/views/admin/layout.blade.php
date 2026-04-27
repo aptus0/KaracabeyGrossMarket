@@ -42,7 +42,8 @@
         td small { color:var(--muted); }
         .form { display:grid; gap:12px; max-width:760px; }
         .form label { display:grid; gap:6px; color:var(--muted); font-size:13px; font-weight:800; }
-        .form input, .form textarea, .form select { width:100%; min-height:42px; border:1px solid var(--line); border-radius:8px; padding:9px 11px; background:#fff; color:var(--ink); }
+        .form input, .form textarea, .form select, td input, td select, td textarea { width:100%; min-height:42px; border:1px solid var(--line); border-radius:8px; padding:9px 11px; background:#fff; color:var(--ink); }
+        td textarea { min-height:76px; resize:vertical; }
         .form textarea { min-height:110px; resize:vertical; }
         .check-row { display:flex; gap:8px; align-items:center; color:var(--ink); }
         .check-row input { width:auto; min-height:auto; }
@@ -67,6 +68,7 @@
                 <a href="{{ route('admin.users.index') }}">Kullanicilar</a>
                 <a href="{{ route('admin.pages.index') }}">Sayfalar</a>
                 <a href="{{ route('admin.homepage-blocks.index') }}">Ana Sayfa</a>
+                <a href="{{ route('admin.navigation.index') }}">Navigasyon</a>
                 <a href="{{ route('admin.campaigns.index') }}">Kampanya</a>
                 <a href="{{ route('admin.marketing.edit') }}">SEO / Pixel</a>
             </nav>

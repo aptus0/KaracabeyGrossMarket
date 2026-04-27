@@ -4,13 +4,13 @@ type PaymentIframeBoxProps = {
 
 export function PaymentIframeBox({ checkoutUrl }: PaymentIframeBoxProps) {
   return (
-    <section className="payment-box" aria-label="PayTR ödeme">
+    <section className="payment-box" aria-label="Güvenli ödeme">
       <div>
-        <strong>PayTR Güvenli Ödeme</strong>
-        <p>Kart bilgileriniz PayTR güvenli ödeme ekranında işlenir.</p>
+        <strong>Güvenli Ödeme</strong>
+        <p>Kart bilgileriniz güvenli ödeme ekranında işlenir.</p>
       </div>
       {checkoutUrl ? (
-        <iframe src={checkoutUrl} title="PayTR güvenli ödeme formu" />
+        <iframe src={checkoutUrl} title="Güvenli ödeme formu" />
       ) : null}
     </section>
   );

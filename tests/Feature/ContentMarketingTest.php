@@ -3,6 +3,7 @@
 use App\Models\Campaign;
 use App\Models\HomepageBlock;
 use App\Models\MarketingSetting;
+use App\Models\NavigationItem;
 use App\Models\Page;
 use App\Models\Tenant;
 use App\Models\User;
@@ -58,6 +59,16 @@ it('serves published pages, homepage blocks, campaigns and marketing settings ov
         'meta_pixel_id' => '123456789',
     ]);
 
+    NavigationItem::query()->create([
+        'tenant_id' => $tenant->id,
+        'placement' => 'header',
+        'label' => 'Urunler',
+        'url' => '/products',
+        'icon' => 'grid',
+        'sort_order' => 10,
+        'is_active' => true,
+    ]);
+
     $this->getJson('/api/v1/content/pages/kvkk')
         ->assertOk()
         ->assertJsonPath('data.slug', 'kvkk')
@@ -72,6 +83,11 @@ it('serves published pages, homepage blocks, campaigns and marketing settings ov
         ->assertOk()
         ->assertJsonPath('data.google_analytics_id', 'G-TEST123')
         ->assertJsonPath('data.meta_pixel_id', '123456789');
+
+    $this->getJson('/api/v1/content/navigation')
+        ->assertOk()
+        ->assertJsonPath('data.header.0.label', 'Urunler')
+        ->assertJsonPath('data.header.0.icon', 'grid');
 });
 
 it('lets admins manage pages and marketing settings', function (): void {
@@ -104,4 +120,31 @@ it('lets admins manage pages and marketing settings', function (): void {
 
     expect(MarketingSetting::query()->first()?->google_analytics_id)->toBe('G-ADMIN123')
         ->and(MarketingSetting::query()->first()?->meta_pixel_id)->toBe('987654321');
+});
+
+it('lets admins manage header and footer navigation safely', function (): void {
+    contentTenant();
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $this->actingAs($admin)
+        ->post('/admin/navigation', [
+            'placement' => 'header',
+            'label' => 'Kampanyalar',
+            'url' => '/kampanyalar',
+            'icon' => 'tag',
+            'sort_order' => 20,
+            'is_active' => '1',
+        ])
+        ->assertRedirect('/admin/navigation');
+
+    expect(NavigationItem::query()->where('label', 'Kampanyalar')->first()?->url)->toBe('/kampanyalar');
+
+    $this->actingAs($admin)
+        ->post('/admin/navigation', [
+            'placement' => 'header',
+            'label' => 'XSS',
+            'url' => 'javascript:alert(1)',
+            'icon' => 'tag',
+        ])
+        ->assertSessionHasErrors('url');
 });

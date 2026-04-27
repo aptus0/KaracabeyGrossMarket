@@ -143,7 +143,32 @@ it('rejects invalid bearer tokens', function (): void {
         ->assertUnauthorized();
 });
 
-it('creates a paytr checkout from a guest cart and clears it after callback', function (): void {
+it('returns safe product suggestions for header search', function (): void {
+    $tenant = commerceTenant();
+
+    Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Gunluk Sut 1 L',
+        'slug' => 'gunluk-sut-1-l',
+        'brand' => 'KGM',
+        'price_cents' => 4490,
+        'stock_quantity' => 10,
+        'image_url' => 'javascript:alert(1)',
+        'is_active' => true,
+    ]);
+
+    $this->getJson('/api/v1/products/suggest?q=sut')
+        ->assertOk()
+        ->assertJsonPath('data.0.name', 'Gunluk Sut 1 L')
+        ->assertJsonPath('data.0.price', '₺44,90')
+        ->assertJsonPath('data.0.image_url', null);
+
+    $this->getJson('/api/v1/products/suggest?q=a')
+        ->assertOk()
+        ->assertJsonCount(0, 'data');
+});
+
+it('creates a provider-neutral checkout from a guest cart and clears it after callback', function (): void {
     config([
         'paytr.merchant_id' => 'merchant-id',
         'paytr.merchant_key' => 'merchant-key',
@@ -174,7 +199,7 @@ it('creates a paytr checkout from a guest cart and clears it after callback', fu
         'quantity' => 2,
     ]);
 
-    $response = $this->postJson('/api/v1/checkout/paytr', [
+    $response = $this->postJson('/api/v1/c', [
         'cart_token' => $cartToken,
         'customer' => [
             'name' => 'Test Musteri',
@@ -191,6 +216,10 @@ it('creates a paytr checkout from a guest cart and clears it after callback', fu
     expect($response->json('data.iframe_token'))->toBe('iframe-token-123')
         ->and($product->fresh()->stock_quantity)->toBe(8);
 
+    expect($response->json('data.checkout_url'))->toContain('/p/')
+        ->not->toContain($response->json('data.merchant_oid'))
+        ->not->toContain('paytr');
+
     $payment = Payment::query()->firstOrFail();
     $payload = [
         'merchant_oid' => $payment->merchant_oid,
@@ -206,7 +235,7 @@ it('creates a paytr checkout from a guest cart and clears it after callback', fu
         true
     ));
 
-    $this->post('/api/paytr/callback', $payload)
+    $this->post('/api/cb/p', $payload)
         ->assertOk()
         ->assertSeeText('OK');
 

@@ -14,7 +14,7 @@ class CheckoutPageController extends Controller
 
         abort_unless($order->payment?->provider_token, 404);
 
-        return view('paytr.checkout', [
+        return view('checkout.session', [
             'order' => $order,
             'iframeSrc' => rtrim(config('paytr.endpoints.iframe_secure'), '/').'/'.$order->payment->provider_token,
         ]);

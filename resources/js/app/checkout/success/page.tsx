@@ -7,7 +7,7 @@ export default function CheckoutSuccessPage() {
       <section className="result-panel">
         <p className="eyebrow">Ödeme alındı</p>
         <h1>Siparişiniz hazırlanıyor.</h1>
-        <p>PayTR doğrulaması tamamlandıktan sonra sipariş durumunuz hesabınıza yansır.</p>
+        <p>Ödeme doğrulaması tamamlandıktan sonra sipariş durumunuz hesabınıza yansır.</p>
         <div className="split-actions">
           <Link className="primary-action" href="/account">
             Hesabım

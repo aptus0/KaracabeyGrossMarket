@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Campaign;
 use App\Models\HomepageBlock;
+use App\Models\NavigationItem;
 use App\Models\Page;
 use App\Support\TenantResolver;
 use Illuminate\Http\JsonResponse;
@@ -85,6 +86,27 @@ class ContentController extends Controller
         ]);
     }
 
+    public function navigation(Request $request, TenantResolver $tenants): JsonResponse
+    {
+        $tenant = $tenants->resolve($request);
+
+        $items = NavigationItem::query()
+            ->whereBelongsTo($tenant)
+            ->where('is_active', true)
+            ->orderBy('placement')
+            ->orderBy('sort_order')
+            ->orderBy('label')
+            ->get()
+            ->groupBy('placement')
+            ->map(fn ($items) => $items->map(fn (NavigationItem $item): array => $this->serializeNavigationItem($item))->values());
+
+        return response()->json([
+            'data' => collect(array_keys(NavigationItem::PLACEMENTS))
+                ->mapWithKeys(fn (string $placement): array => [$placement => $items->get($placement, collect())->values()])
+                ->all(),
+        ]);
+    }
+
     private function activeCampaigns(int $tenantId)
     {
         return Campaign::query()
@@ -139,6 +161,17 @@ class ContentController extends Controller
             'starts_at' => $campaign->starts_at,
             'ends_at' => $campaign->ends_at,
             'seo' => $campaign->seo,
+        ];
+    }
+
+    private function serializeNavigationItem(NavigationItem $item): array
+    {
+        return [
+            'id' => $item->id,
+            'label' => $item->label,
+            'url' => $item->url,
+            'icon' => $item->icon,
+            'external' => str_starts_with($item->url, 'http://') || str_starts_with($item->url, 'https://'),
         ];
     }
 }
