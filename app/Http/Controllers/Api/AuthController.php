@@ -8,13 +8,13 @@ use App\Models\CartItem;
 use App\Models\User;
 use App\Services\Auth\ApiTokenIssuer;
 use App\Services\Auth\OAuthProviderManager;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -23,9 +23,14 @@ class AuthController extends Controller
 
     public function register(Request $request, ApiTokenIssuer $tokenIssuer): JsonResponse
     {
+        // Telefonu önceden normalize ederek doğru unique kontrolü sağla
+        $request->merge([
+            'phone' => $this->normalizePhone((string) $request->input('phone', '')),
+        ]);
+
         $validated = $request->validate([
             'name'        => ['required', 'string', 'max:120'],
-            'phone'       => ['required', 'string', 'max:20', 'unique:users,phone'],
+            'phone'       => ['required', 'string', 'regex:/^5[0-9]{9}$/', 'unique:users,phone'],
             'password'    => [
                 'required',
                 'string',
@@ -34,11 +39,15 @@ class AuthController extends Controller
             'location'    => ['nullable', 'string', 'max:160'],
             'device_name' => ['nullable', 'string', 'max:80'],
             'cart_token'  => ['nullable', 'string', 'max:64'],
+        ], [
+            'phone.regex'    => 'Geçerli bir Türkiye telefon numarası girin (5xx xxx xx xx).',
+            'phone.unique'   => 'Bu telefon numarasıyla zaten bir hesap mevcut.',
+            'password.min'   => 'Şifreniz en az 8 karakter olmalı.',
         ]);
 
         $user = User::query()->create([
-            'name'          => $validated['name'],
-            'phone'         => $this->normalizePhone($validated['phone']),
+            'name'          => trim($validated['name']),
+            'phone'         => $validated['phone'],
             'password'      => $validated['password'],
             'last_ip'       => $request->ip(),
             'last_location' => $validated['location'] ?? null,
@@ -47,11 +56,10 @@ class AuthController extends Controller
 
         $this->claimGuestCart($request, $user);
 
-        return response()->json([
-            'user'       => $this->serializeUser($user),
-            'token'      => $tokenIssuer->issue($user, (string) $request->input('device_name', 'default')),
-            'token_type' => 'Bearer',
-        ], 201);
+        return response()->json($this->buildAuthPayload(
+            $user,
+            $tokenIssuer->issue($user, (string) $request->input('device_name', 'default')),
+        ), 201);
     }
 
     public function login(Request $request, ApiTokenIssuer $tokenIssuer): JsonResponse
@@ -68,12 +76,16 @@ class AuthController extends Controller
         $throttleKey  = $this->throttleKey($phone, $request->ip());
 
         if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_ATTEMPTS)) {
-            $seconds = RateLimiter::availableIn($throttleKey);
-            $minutes = (int) ceil($seconds / 60);
+            $retryAfter = RateLimiter::availableIn($throttleKey);
+            $minutes    = (int) ceil($retryAfter / 60);
 
-            throw ValidationException::withMessages([
-                'phone' => "Çok fazla başarısız giriş denemesi. {$minutes} dakika sonra tekrar deneyin.",
-            ])->status(429);
+            throw new HttpResponseException(response()->json([
+                'message'            => "Çok fazla başarısız giriş denemesi. {$minutes} dakika sonra tekrar deneyin.",
+                'remaining_attempts' => 0,
+                'locked'             => true,
+                'retry_after'        => $retryAfter,
+                'errors'             => ['phone' => ["Çok fazla başarısız giriş denemesi. {$minutes} dakika sonra tekrar deneyin."]],
+            ], 429));
         }
 
         $user = User::query()->where('phone', $phone)->first();
@@ -81,23 +93,24 @@ class AuthController extends Controller
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             RateLimiter::hit($throttleKey, self::DECAY_SECONDS);
 
-            $remaining = max(0, self::MAX_ATTEMPTS - RateLimiter::attempts($throttleKey));
-            $message   = $remaining > 0
-                ? "Giriş bilgileri hatalı. {$remaining} deneme hakkınız kaldı."
-                : 'Çok fazla başarısız giriş denemesi. Lütfen bekleyin.';
+            $remaining  = max(0, self::MAX_ATTEMPTS - RateLimiter::attempts($throttleKey));
+            $isLocked   = $remaining === 0;
+            $retryAfter = $isLocked ? RateLimiter::availableIn($throttleKey) : null;
+            $message    = $isLocked
+                ? 'Çok fazla başarısız giriş denemesi. Lütfen bekleyin.'
+                : "Telefon numarası veya şifre hatalı. {$remaining} deneme hakkınız kaldı.";
 
-            throw ValidationException::withMessages([
-                'phone' => $message,
-            ])->withResponse(response()->json([
+            throw new HttpResponseException(response()->json([
                 'message'            => $message,
                 'remaining_attempts' => $remaining,
-                'locked'             => $remaining === 0,
-            ], 422));
+                'locked'             => $isLocked,
+                'retry_after'        => $retryAfter,
+                'errors'             => ['phone' => [$message]],
+            ], $isLocked ? 429 : 422));
         }
 
         RateLimiter::clear($throttleKey);
 
-        // Session meta güncelle
         $user->update([
             'last_ip'       => $request->ip(),
             'last_location' => $credentials['location'] ?? $user->last_location,
@@ -106,11 +119,10 @@ class AuthController extends Controller
 
         $this->claimGuestCart($request, $user);
 
-        return response()->json([
-            'user'       => $this->serializeUser($user),
-            'token'      => $tokenIssuer->issue($user, (string) $request->input('device_name', 'default')),
-            'token_type' => 'Bearer',
-        ]);
+        return response()->json($this->buildAuthPayload(
+            $user,
+            $tokenIssuer->issue($user, (string) $request->input('device_name', 'default')),
+        ));
     }
 
     public function providers(OAuthProviderManager $providers): JsonResponse
@@ -169,10 +181,25 @@ class AuthController extends Controller
     private function serializeUser(User $user): array
     {
         return [
-            'id'    => $user->id,
-            'name'  => $user->name,
-            'phone' => $user->phone,
-            'email' => $user->email,
+            'id'                => $user->id,
+            'name'              => $user->name,
+            'phone'             => $user->phone,
+            'email'             => $user->email,
+            'avatar_url'        => $user->avatar_url ?? null,
+            'email_verified_at' => $user->email_verified_at?->toIso8601String(),
+        ];
+    }
+
+    /**
+     * @param array{token: string, expires_at: \Carbon\CarbonImmutable} $tokenData
+     */
+    private function buildAuthPayload(User $user, array $tokenData): array
+    {
+        return [
+            'user'       => $this->serializeUser($user),
+            'token'      => $tokenData['token'],
+            'token_type' => 'Bearer',
+            'expires_at' => $tokenData['expires_at']->toIso8601String(),
         ];
     }
 

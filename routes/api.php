@@ -21,6 +21,10 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:api');
     Route::get('/auth/providers', [AuthController::class, 'providers'])->middleware('throttle:api');
 
+    // Tarayıcıdan doğrudan ziyaret edenleri ilgili frontend sayfasına yönlendir
+    Route::get('/auth/register', fn () => redirect(rtrim((string) env('FRONTEND_URL', '/'), '/') . '/auth/register'));
+    Route::get('/auth/login', fn () => redirect(rtrim((string) env('FRONTEND_URL', '/'), '/') . '/auth/login'));
+
     Route::get('/products', [ProductController::class, 'index'])->middleware('throttle:api');
     Route::get('/products/suggest', [ProductController::class, 'suggest'])->middleware('throttle:api');
     Route::get('/products/{slug}', [ProductController::class, 'show'])->middleware('throttle:api');

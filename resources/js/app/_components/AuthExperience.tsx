@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { KgmLogo } from "@/app/_components/KgmLogo";
-import { apiRequest, extractErrorMessage } from "@/lib/api";
+import { ApiRequestError, apiRequest, extractErrorMessage } from "@/lib/api";
 import { useAuthStore, type AuthUser } from "@/lib/auth-store";
 import { useCartStore } from "@/lib/cart-store";
 
@@ -79,7 +79,12 @@ const strengthConfig: Record<StrengthLevel, { label: string; color: string; pct:
 
 type AuthMode = "login" | "register";
 type AuthFormValues = { name?: string; phone: string; password: string };
-type AuthResponse = { user: AuthUser; token: string };
+type AuthResponse = {
+  user: AuthUser;
+  token: string;
+  token_type?: string;
+  expires_at?: string | null;
+};
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -135,6 +140,8 @@ export function AuthExperience({ mode }: { mode: AuthMode }) {
 
   async function submit(values: AuthFormValues) {
     setFormError(null);
+    setRemaining(null);
+    setLocked(false);
 
     const location = await detectLocation();
 
@@ -145,6 +152,7 @@ export function AuthExperience({ mode }: { mode: AuthMode }) {
           method: "POST",
           body: JSON.stringify({
             ...values,
+            phone: values.phone.replace(/\s+/g, ""),
             location,
             device_name: "next-storefront",
             cart_token: cartToken ?? undefined,
@@ -154,26 +162,37 @@ export function AuthExperience({ mode }: { mode: AuthMode }) {
 
       setSuccessState(true);
       setTimeout(async () => {
-        setSession(payload.token, payload.user);
+        setSession(payload.token, payload.user, payload.expires_at ?? null);
         await initializeCart({ silent: true });
         router.replace("/account");
       }, 600);
     } catch (error: unknown) {
-      const apiError = error as { remaining_attempts?: number; locked?: boolean; retry_after?: number } | null;
+      if (error instanceof ApiRequestError) {
+        if (mode === "login") {
+          setRemaining(error.remainingAttempts);
+          setLocked(error.locked);
 
-      if (apiError && typeof apiError === "object") {
-        const rem     = apiError.remaining_attempts;
-        const isLocked = apiError.locked ?? false;
-        const retry   = apiError.retry_after;
+          if (error.locked && error.retryAfter) {
+            startCountdown(error.retryAfter);
+          }
+        }
 
-        setRemaining(typeof rem === "number" ? rem : null);
-        setLocked(isLocked);
-
-        if (isLocked && retry) startCountdown(retry);
+        setFormError(
+          error.message ||
+            (mode === "login"
+              ? "Giriş yapılırken bir sorun oluştu."
+              : "Kayıt tamamlanamadı."),
+        );
+        return;
       }
 
       setFormError(
-        extractErrorMessage(error, mode === "login" ? "Giriş yapılırken bir sorun oluştu." : "Kayıt tamamlanamadı."),
+        extractErrorMessage(
+          error,
+          mode === "login"
+            ? "Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin."
+            : "Kayıt tamamlanamadı. Lütfen daha sonra tekrar deneyin.",
+        ),
       );
     }
   }

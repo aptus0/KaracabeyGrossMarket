@@ -46,7 +46,7 @@ export function AddToCartButton({
     setError(null);
     setIsPending(true);
     try {
-      await addItemBySlug(productSlug, quantity, { openSheet: true });
+      await addItemBySlug(productSlug, quantity, { openSheet: false });
       setSuccess(true);
     } catch (caughtError) {
       setError(extractErrorMessage(caughtError, "Ürün sepete eklenemedi."));

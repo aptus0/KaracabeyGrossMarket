@@ -3,13 +3,16 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  ChevronDown,
   Grid3X3,
   Heart,
   LogIn,
+  MapPin,
   Menu,
   PackageSearch,
+  Settings,
   ShoppingCart,
   User,
   X,
@@ -131,7 +134,7 @@ export function Header({ compact = false }: HeaderProps) {
             type="button"
             className="header-action header-action--cart"
             aria-label="Sepet"
-            aria-expanded={isCartOpen}
+            aria-expanded={isCartOpen ? "true" : "false"}
             aria-haspopup="dialog"
             onClick={openCartSheet}
           >
@@ -223,15 +226,75 @@ function HeaderAccountLink({
   isAuthenticated: boolean;
   userName: string;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  if (!isAuthenticated) {
+    return (
+      <Link
+        href="/auth/login"
+        className="header-account-button header-action--desktop-only"
+        aria-label="Giriş Yap"
+      >
+        <LogIn size={18} />
+        <span>Giriş Yap</span>
+      </Link>
+    );
+  }
+
   return (
-    <Link
-      href={isAuthenticated ? "/account" : "/auth/login"}
-      className="header-account-button header-action--desktop-only"
-      aria-label={isAuthenticated ? "Hesabım" : "Giriş Yap"}
-    >
-      {isAuthenticated ? <User size={18} /> : <LogIn size={18} />}
-      <span>{isAuthenticated ? `Merhaba ${userName}` : "Giriş Yap"}</span>
-    </Link>
+    <div className="header-account-dropdown" ref={ref}>
+      <button
+        type="button"
+        className="header-account-button header-account-button--active header-action--desktop-only"
+        aria-expanded={isOpen ? "true" : "false"}
+        aria-haspopup="true"
+        onClick={() => setIsOpen((prev) => !prev)}
+      >
+        <User size={18} />
+        <span>Merhaba {userName}</span>
+        <ChevronDown size={14} className={isOpen ? "header-account-chevron header-account-chevron--open" : "header-account-chevron"} />
+      </button>
+
+      {isOpen && (
+        <div className="header-account-dropdown__menu">
+          <Link href="/account/addresses" className="header-account-dropdown__item" onClick={() => setIsOpen(false)}>
+            <MapPin size={16} />
+            Adreslerim
+          </Link>
+          <Link href="/account" className="header-account-dropdown__item" onClick={() => setIsOpen(false)}>
+            <User size={16} />
+            Hesabım
+          </Link>
+          <Link href="/favorites" className="header-account-dropdown__item" onClick={() => setIsOpen(false)}>
+            <Heart size={16} />
+            Favoriler
+          </Link>
+          <Link href="/account/settings" className="header-account-dropdown__item" onClick={() => setIsOpen(false)}>
+            <Settings size={16} />
+            Ayarlar
+          </Link>
+        </div>
+      )}
+    </div>
   );
 }
 

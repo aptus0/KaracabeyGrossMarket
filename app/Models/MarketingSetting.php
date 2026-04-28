@@ -17,6 +17,7 @@ class MarketingSetting extends Model
         'google_ads_conversion_label',
         'google_site_verification',
         'meta_pixel_id',
+        'announcement_text',
         'extra',
     ];
 

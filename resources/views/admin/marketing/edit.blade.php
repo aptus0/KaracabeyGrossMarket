@@ -12,6 +12,24 @@
             @method('PUT')
 
             <div class="grid gap-6">
+                <!-- General Settings -->
+                <x-ui.card>
+                    <div class="p-6 border-b flex flex-col space-y-1.5">
+                        <div class="flex items-center gap-2">
+                            <x-lucide-megaphone class="h-5 w-5 text-orange-500" />
+                            <h3 class="font-semibold tracking-tight">Genel Duyuru Ayarları</h3>
+                        </div>
+                        <p class="text-sm text-muted-foreground">Sitenin en üstünde yer alan duyuru barını yönetin.</p>
+                    </div>
+                    <div class="p-6 grid gap-6">
+                        <div class="space-y-2">
+                            <x-ui.label for="announcement_text">Duyuru Metni (Top Banner)</x-ui.label>
+                            <x-ui.input id="announcement_text" name="announcement_text" value="{{ old('announcement_text', $setting->announcement_text) }}" placeholder="Örn: Güvenli ödeme, canlı stok..." />
+                            <p class="text-[0.8rem] text-muted-foreground">Sitenin her sayfasında en üstte görünecek kampanya veya bilgilendirme metni.</p>
+                        </div>
+                    </div>
+                </x-ui.card>
+
                 <!-- Google Integrations -->
                 <x-ui.card>
                     <div class="p-6 border-b flex flex-col space-y-1.5">

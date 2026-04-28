@@ -3,17 +3,44 @@ export const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 type ApiErrorPayload = {
   message?: string;
   errors?: Record<string, string | string[]>;
+  remaining_attempts?: number;
+  locked?: boolean;
+  retry_after?: number;
+  [key: string]: unknown;
 };
 
 export class ApiRequestError extends Error {
   status: number;
   errors?: Record<string, string | string[]>;
+  payload: ApiErrorPayload | null;
 
-  constructor(message: string, status: number, errors?: Record<string, string | string[]>) {
+  constructor(
+    message: string,
+    status: number,
+    errors?: Record<string, string | string[]>,
+    payload: ApiErrorPayload | null = null,
+  ) {
     super(message);
     this.name = "ApiRequestError";
     this.status = status;
     this.errors = errors;
+    this.payload = payload;
+  }
+
+  get remainingAttempts(): number | null {
+    return typeof this.payload?.remaining_attempts === "number"
+      ? this.payload.remaining_attempts
+      : null;
+  }
+
+  get locked(): boolean {
+    return Boolean(this.payload?.locked);
+  }
+
+  get retryAfter(): number | null {
+    return typeof this.payload?.retry_after === "number"
+      ? this.payload.retry_after
+      : null;
   }
 }
 
@@ -40,6 +67,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
       resolveErrorMessage(payload) ?? `İstek başarısız oldu (${response.status}).`,
       response.status,
       payload?.errors,
+      payload ?? null,
     );
   }
 

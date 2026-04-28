@@ -18,7 +18,9 @@ type CartStore = CartData & {
   error: string | null;
   isSheetOpen: boolean;
   isHydrated: boolean;
+  lastAddedItem: { product: any; quantity: number } | null;
   markHydrated: () => void;
+  clearLastAddedItem: () => void;
   initialize: (options?: { silent?: boolean }) => Promise<CartData>;
   addItemBySlug: (slug: string, quantity?: number, options?: { openSheet?: boolean }) => Promise<CartData>;
   updateItemQuantity: (itemId: number, quantity: number) => Promise<CartData>;
@@ -39,7 +41,9 @@ export const useCartStore = create<CartStore>()(
       error: null,
       isSheetOpen: false,
       isHydrated: false,
+      lastAddedItem: null,
       markHydrated: () => set({ isHydrated: true }),
+      clearLastAddedItem: () => set({ lastAddedItem: null }),
       initialize: async (options) => {
         const status = options?.silent ? "idle" : "loading";
         set({ status, error: null });
@@ -87,6 +91,7 @@ export const useCartStore = create<CartStore>()(
           );
 
           const nextCart = normalizeCart(cart);
+          const addedProduct = nextCart.items.find((item) => item.product?.slug === slug)?.product;
 
           set({
             ...nextCart,
@@ -94,6 +99,7 @@ export const useCartStore = create<CartStore>()(
             error: null,
             isHydrated: true,
             isSheetOpen: options.openSheet ?? true,
+            lastAddedItem: addedProduct ? { product: addedProduct, quantity } : null,
           });
 
           return nextCart;

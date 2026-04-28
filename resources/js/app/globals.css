@@ -966,6 +966,74 @@ img {
   color: #111827;
 }
 
+.header-account-button--active {
+  background: #f0f7ff;
+  border-color: #bfd7f5;
+  color: #1a56db;
+}
+
+.header-account-button--active:hover {
+  background: #e0efff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.header-account-chevron {
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.header-account-chevron--open {
+  transform: rotate(180deg);
+}
+
+.header-account-dropdown {
+  position: relative;
+}
+
+.header-account-dropdown__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 50;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid #e4e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 32px rgba(43, 47, 54, 0.12);
+  animation: dropdown-appear 0.15s ease;
+}
+
+@keyframes dropdown-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.header-account-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: #2b2f36;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.header-account-dropdown__item:hover {
+  background: #f4f6f8;
+  color: #111827;
+}
+
 .desktop-nav {
   display: flex;
   align-items: center;

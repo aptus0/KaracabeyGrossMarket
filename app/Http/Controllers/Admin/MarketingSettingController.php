@@ -28,6 +28,7 @@ class MarketingSettingController extends Controller
             'google_ads_conversion_label' => ['nullable', 'string', 'max:120'],
             'google_site_verification' => ['nullable', 'string', 'max:255'],
             'meta_pixel_id' => ['nullable', 'string', 'max:80'],
+            'announcement_text' => ['nullable', 'string', 'max:255'],
         ]);
 
         $tenant->marketingSetting()->updateOrCreate([], $validated);

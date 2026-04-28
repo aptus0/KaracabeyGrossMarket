@@ -95,6 +95,7 @@ class ContentController extends Controller
                 'google_ads_conversion_label' => $setting?->google_ads_conversion_label ?: config('services.google.ads_conversion_label'),
                 'google_site_verification' => $setting?->google_site_verification ?: config('services.google.site_verification'),
                 'meta_pixel_id' => $setting?->meta_pixel_id ?: config('services.meta.pixel_id'),
+                'announcement_text' => $setting?->announcement_text,
             ],
         ]);
     }

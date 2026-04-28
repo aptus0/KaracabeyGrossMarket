@@ -7,7 +7,8 @@ import { apiRequest } from "@/lib/api";
 export type AuthUser = {
   id: number;
   name: string;
-  email: string;
+  phone: string | null;
+  email: string | null;
   avatar_url?: string | null;
   google_id?: string | null;
   facebook_id?: string | null;
@@ -16,27 +17,43 @@ export type AuthUser = {
 
 type AuthState = {
   token: string | null;
+  expiresAt: string | null;
   user: AuthUser | null;
   isHydrated: boolean;
   isAuthenticated: boolean;
   markHydrated: () => void;
-  setSession: (token: string, user: AuthUser) => void;
+  setSession: (token: string, user: AuthUser, expiresAt?: string | null) => void;
   clearSession: () => void;
   initialize: () => Promise<AuthUser | null>;
   logout: () => Promise<void>;
 };
 
+function isTokenExpired(expiresAt: string | null): boolean {
+  if (!expiresAt) return false;
+  const ts = Date.parse(expiresAt);
+  return Number.isFinite(ts) && ts <= Date.now();
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       token: null,
+      expiresAt: null,
       user: null,
       isHydrated: false,
       isAuthenticated: false,
-      markHydrated: () => set({ isHydrated: true, isAuthenticated: Boolean(get().token) }),
-      setSession: (token, user) =>
+      markHydrated: () => {
+        const { token, expiresAt } = get();
+        if (token && isTokenExpired(expiresAt)) {
+          set({ token: null, expiresAt: null, user: null, isAuthenticated: false, isHydrated: true });
+          return;
+        }
+        set({ isHydrated: true, isAuthenticated: Boolean(token) });
+      },
+      setSession: (token, user, expiresAt = null) =>
         set({
           token,
+          expiresAt,
           user,
           isAuthenticated: true,
           isHydrated: true,
@@ -44,15 +61,18 @@ export const useAuthStore = create<AuthState>()(
       clearSession: () =>
         set({
           token: null,
+          expiresAt: null,
           user: null,
           isAuthenticated: false,
           isHydrated: true,
         }),
       initialize: async () => {
-        const token = get().token;
+        const { token, expiresAt } = get();
 
-        if (!token) {
+        if (!token || isTokenExpired(expiresAt)) {
           set({
+            token: null,
+            expiresAt: null,
             user: null,
             isAuthenticated: false,
             isHydrated: true,
@@ -70,6 +90,7 @@ export const useAuthStore = create<AuthState>()(
 
           set({
             token,
+            expiresAt,
             user,
             isAuthenticated: true,
             isHydrated: true,
@@ -105,6 +126,7 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         token: state.token,
+        expiresAt: state.expiresAt,
         user: state.user,
       }),
       onRehydrateStorage: () => (state) => {
