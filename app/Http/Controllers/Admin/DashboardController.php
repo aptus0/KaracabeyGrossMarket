@@ -10,6 +10,7 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Refund;
+use App\Services\ErkurAnalyticsService;
 use App\Support\TenantResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    public function __construct(private ErkurAnalyticsService $erkur) {}
     public function __invoke(Request $request, TenantResolver $tenants): View
     {
         $tenant = $tenants->resolve($request);
@@ -176,6 +178,14 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get(),
             'chartData' => $chartData,
+            // Erkur ERP verileri
+            'erkurFinans' => $this->erkur->getFinansOzeti(),
+            'erkurPos' => $this->erkur->getPosOzeti(),
+            'erkurPosTutar' => $this->erkur->getPosTutarOzeti(),
+            'erkurFaturalar' => $this->erkur->getEFaturalar(10),
+            'erkurStok' => $this->erkur->getStokOzeti(),
+            'erkurCari' => $this->erkur->getCariOzeti(8),
+            'erkurSayim' => $this->erkur->getSayimOzeti(),
         ]);
     }
 
