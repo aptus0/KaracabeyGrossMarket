@@ -15,7 +15,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
         <Icon size={22} />
       </span>
       <span>{category.name}</span>
-      <strong>{category.count} ürün</strong>
+      {category.count ? <strong>{category.count} ürün</strong> : null}
     </Link>
   );
 }

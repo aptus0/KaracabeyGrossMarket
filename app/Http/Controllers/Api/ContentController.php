@@ -70,6 +70,19 @@ class ContentController extends Controller
         ]);
     }
 
+    public function campaign(Request $request, TenantResolver $tenants, string $slug): JsonResponse
+    {
+        $tenant = $tenants->resolve($request);
+
+        $campaign = Campaign::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('slug', $slug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        return response()->json(['data' => $this->serializeCampaign($campaign, full: true)]);
+    }
+
     public function marketing(Request $request, TenantResolver $tenants): JsonResponse
     {
         $tenant = $tenants->resolve($request);
@@ -148,20 +161,41 @@ class ContentController extends Controller
         ];
     }
 
-    private function serializeCampaign(Campaign $campaign): array
+    private function serializeCampaign(Campaign $campaign, bool $full = false): array
     {
-        return [
-            'id' => $campaign->id,
-            'name' => $campaign->name,
-            'slug' => $campaign->slug,
-            'description' => $campaign->description,
+        $data = [
+            'id'               => $campaign->id,
+            'name'             => $campaign->name,
+            'slug'             => $campaign->slug,
+            'description'      => $campaign->description,
             'banner_image_url' => $campaign->banner_image_url,
-            'discount_type' => $campaign->discount_type,
-            'discount_value' => $campaign->discount_value,
-            'starts_at' => $campaign->starts_at,
-            'ends_at' => $campaign->ends_at,
-            'seo' => $campaign->seo,
+            'meta_image_url'   => $campaign->meta_image_url,
+            'badge_label'      => $campaign->badge_label,
+            'color_hex'        => $campaign->color_hex ?? '#FF7A00',
+            'discount_type'    => $campaign->discount_type,
+            'discount_value'   => $campaign->discount_value,
+            'discount_label'   => $campaign->discount_label,
+            'starts_at'        => $campaign->starts_at?->toIso8601String(),
+            'ends_at'          => $campaign->ends_at?->toIso8601String(),
+            'coupons_count'    => $campaign->coupons()->where('is_active', true)->count(),
+            'seo'              => $campaign->seo,
         ];
+
+        if ($full) {
+            $data['body'] = $campaign->body;
+            $data['coupons'] = $campaign->coupons()
+                ->where('is_active', true)
+                ->get()
+                ->map(fn ($c) => [
+                    'code'           => $c->code,
+                    'discount_type'  => $c->discount_type,
+                    'discount_value' => $c->discount_value,
+                    'ends_at'        => $c->ends_at?->toIso8601String(),
+                ])
+                ->values();
+        }
+
+        return $data;
     }
 
     private function serializeNavigationItem(NavigationItem $item): array

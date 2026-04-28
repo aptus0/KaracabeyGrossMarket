@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { CouponInput, type CouponData } from "@/app/_components/CouponInput";
 import { Button } from "@/app/_components/ui/button";
 import { formatCartMoney, type CartLineItem } from "@/lib/cart";
 import { useCartStore } from "@/lib/cart-store";
@@ -13,6 +14,9 @@ type CheckoutSummaryProps = {
   description?: string;
   editable?: boolean;
   className?: string;
+  coupon?: CouponData | null;
+  onCouponApply?: (coupon: CouponData) => void;
+  onCouponRemove?: () => void;
 };
 
 export function CheckoutSummary({
@@ -21,6 +25,9 @@ export function CheckoutSummary({
   description = "Sepetinizdeki ürünler canlı olarak güncellenir.",
   editable = false,
   className,
+  coupon,
+  onCouponApply,
+  onCouponRemove,
 }: CheckoutSummaryProps) {
   const storeItems = useCartStore((state) => state.items);
   const subtotal = useCartStore((state) => state.subtotal_cents);
@@ -33,9 +40,10 @@ export function CheckoutSummary({
   const resolvedSubtotal = items
     ? items.reduce((sum, item) => sum + item.line_total_cents, 0)
     : subtotal;
-  const resolvedTotal = items
-    ? items.reduce((sum, item) => sum + item.line_total_cents, 0)
-    : total;
+  const discountCents = coupon?.discount_cents ?? 0;
+  const resolvedTotal = coupon
+    ? Math.max(0, resolvedSubtotal - discountCents)
+    : (items ? resolvedSubtotal : total);
 
   if (resolvedItems.length === 0) {
     return (
@@ -148,11 +156,34 @@ export function CheckoutSummary({
         ))}
       </ul>
 
-      <div className="mt-5 grid gap-3 rounded-2xl border border-[#EEF1F4] bg-[#FAFBFC] p-4">
+      {onCouponApply ? (
+        <div className="mt-4 border-t border-[#EEF1F4] pt-4">
+          <CouponInput
+            subtotalCents={resolvedSubtotal}
+            appliedCoupon={coupon ?? null}
+            onApply={onCouponApply}
+            onRemove={onCouponRemove ?? (() => undefined)}
+            disabled={status === "updating"}
+          />
+        </div>
+      ) : null}
+
+      <div className="mt-4 grid gap-3 rounded-2xl border border-[#EEF1F4] bg-[#FAFBFC] p-4">
         <div className="flex items-center justify-between text-sm text-[#6B7177]">
           <span>Ara Toplam</span>
           <strong className="font-black text-[#2B2F36]">{formatCartMoney(resolvedSubtotal)}</strong>
         </div>
+        {discountCents > 0 ? (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[#16A34A]">
+              İndirim
+              {coupon ? ` (${coupon.code})` : ""}
+            </span>
+            <strong className="font-black text-[#16A34A]">
+              -{formatCartMoney(discountCents)}
+            </strong>
+          </div>
+        ) : null}
         <div className="checkout-summary__total flex items-center justify-between border-t border-[#E4E7EB] pt-3">
           <span className="text-sm font-bold text-[#6B7177]">Toplam</span>
           <strong className="text-xl font-black text-[#2B2F36]">{formatCartMoney(resolvedTotal)}</strong>

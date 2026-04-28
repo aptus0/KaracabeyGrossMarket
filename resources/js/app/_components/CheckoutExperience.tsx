@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { CreditCard, ShieldCheck } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { type CouponData } from "@/app/_components/CouponInput";
 import { CheckoutForm } from "@/app/_components/CheckoutForm";
 import { CheckoutSummary } from "@/app/_components/CheckoutSummary";
 import { useCartStore } from "@/lib/cart-store";
@@ -13,12 +14,21 @@ export function CheckoutExperience() {
   const isHydrated = useCartStore((state) => state.isHydrated);
   const status = useCartStore((state) => state.status);
   const initializeCart = useCartStore((state) => state.initialize);
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponData | null>(null);
 
   useEffect(() => {
     if (!isHydrated) {
       initializeCart().catch(() => undefined);
     }
   }, [initializeCart, isHydrated]);
+
+  const subtotalCents = items.reduce((sum, item) => sum + item.line_total_cents, 0);
+
+  useEffect(() => {
+    if (appliedCoupon && subtotalCents < (appliedCoupon.total_cents + appliedCoupon.discount_cents)) {
+      setAppliedCoupon(null);
+    }
+  }, [subtotalCents, appliedCoupon]);
 
   if (isHydrated && items.length === 0) {
     return (
@@ -71,6 +81,7 @@ export function CheckoutExperience() {
             quantity: item.quantity,
           }))}
           cartToken={cartToken}
+          couponCode={appliedCoupon?.code ?? null}
           disabled={status === "loading"}
         />
       </section>
@@ -79,6 +90,9 @@ export function CheckoutExperience() {
         editable
         title="Sipariş Özeti"
         description="Header badge, mini-cart ve bu sayfa aynı canlı sepet verisini kullanır."
+        coupon={appliedCoupon}
+        onCouponApply={setAppliedCoupon}
+        onCouponRemove={() => setAppliedCoupon(null)}
       />
     </div>
   );

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import {
   ArrowUpRight,
+  ChevronDown,
   CreditCard,
   Lock,
   Mail,
@@ -71,6 +72,16 @@ const addressDisplay = "Drama, Runguçpaşa Caddesi, 16700 Karacabey/Bursa";
 const mapsUrl =
   "https://www.google.com/maps/search/?api=1&query=Drama%2C%20Rungu%C3%A7pa%C5%9Fa%20Caddesi%2C%2016700%20Karacabey%2FBursa";
 
+/** URL'e göre tekrarlanan item'ları kaldırır. */
+function dedupeByUrl<T extends { url: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.url)) return false;
+    seen.add(item.url);
+    return true;
+  });
+}
+
 export function Footer({ compact = false }: FooterProps) {
   const [navigation, setNavigation] = useState<NavigationData>(defaultNavigation);
   const [email, setEmail] = useState("");
@@ -91,32 +102,33 @@ export function Footer({ compact = false }: FooterProps) {
 
   return (
     <footer className={compact ? "site-footer site-footer--compact" : "site-footer"}>
-      <div className={`mx-auto w-full max-w-[1440px] px-6 sm:px-8 lg:px-12 ${compact ? "py-12" : "py-16"}`}>
-        <div className="grid gap-8">
-          <div className="grid gap-8 lg:grid-cols-4 lg:gap-12">
-            <section className="grid content-start gap-6">
+      <div className={`mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-12 ${compact ? "py-10" : "py-14"}`}>
+        <div className="grid gap-6 lg:gap-8">
+
+          {/* ── DESKTOP ÜSTÜ BÖLÜM ── */}
+          <div className="footer-desktop-top grid gap-8 lg:grid-cols-4 lg:gap-12">
+            {/* Marka */}
+            <section className="grid content-start gap-5">
               <Link className="inline-flex w-fit rounded-2xl border border-[#E4E7EB] bg-white p-4 shadow-sm" href="/">
                 <KgmLogo />
               </Link>
-
-              <div className="grid gap-3">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#6B7177]">
+              <div className="grid gap-2">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#4B5E7A]">
                   Karacabey Gross Market
                 </p>
-                <h2 className="text-2xl font-black leading-tight text-[#111827]">
+                <h2 className="text-xl font-black leading-tight text-[#F1F5F9]">
                   Karacabey için güvenilir online market operasyonu.
                 </h2>
-                <p className="text-sm leading-7 text-[#6B7177]">
-                  Hızlı teslimat, güvenli ödeme, kurumsal sipariş akışı ve modern hesap deneyimi.
+                <p className="text-sm leading-7 text-[#94A3B8]">
+                  Hızlı teslimat, güvenli ödeme, kurumsal sipariş akışı.
                 </p>
               </div>
-
               <div className="flex flex-wrap gap-3">
-                <Button asChild className="h-11 rounded-xl px-6">
+                <Button asChild className="h-10 rounded-xl px-5">
                   <Link href="/products">Ürünleri İncele</Link>
                 </Button>
-                <Button asChild variant="outline" className="h-11 rounded-xl border-[#E4E7EB] px-6">
-                  <Link href="/kurumsal/hakkimizda">Kurumsal Bilgiler</Link>
+                <Button asChild variant="outline" className="h-10 rounded-xl border-[#2D3A52] px-5 text-[#F1F5F9] hover:bg-[#1A2744]">
+                  <Link href="/kurumsal/hakkimizda">Kurumsal</Link>
                 </Button>
               </div>
             </section>
@@ -124,115 +136,135 @@ export function Footer({ compact = false }: FooterProps) {
             <section className="grid content-start gap-8">
               <FooterColumn
                 title="Alışveriş"
-                items={[
+                items={dedupeByUrl([
                   ...navigation.footer_primary,
                   { label: "Kampanyalar", url: "/kampanyalar", icon: "tag" },
-                  { label: "Yeni Gelen Ürünler", url: "/products?sort=newest", icon: "grid" },
-                ]}
+                  { label: "Yeni Ürünler", url: "/products?sort=newest", icon: "grid" },
+                ])}
               />
               <FooterColumn
                 title="Kurumsal"
-                items={[
+                items={dedupeByUrl([
                   ...navigation.footer_corporate,
                   { label: "Ödeme Güvenliği", url: "/kurumsal/odeme-guvenligi", icon: "shield" },
                   { label: "Teslimat Bölgeleri", url: "/kurumsal/teslimat-bolgeleri", icon: "map-pin" },
-                  { label: "Mesafeli Satış Sözleşmesi", url: "/kurumsal/mesafeli-satis-sozlesmesi", icon: "file-text" },
-                ]}
+                  { label: "Mesafeli Satış", url: "/kurumsal/mesafeli-satis-sozlesmesi", icon: "file-text" },
+                ])}
               />
             </section>
 
             <section className="grid content-start gap-8">
               <FooterColumn
                 title="Destek"
-                items={[
+                items={dedupeByUrl([
                   ...navigation.footer_support,
                   { label: "Üyelik Sözleşmesi", url: "/kurumsal/uyelik-sozlesmesi", icon: "file-text" },
                   { label: "Gizlilik Politikası", url: "/kurumsal/gizlilik-politikasi", icon: "shield" },
                   { label: "İletişim", url: "/kurumsal/iletisim", icon: "phone" },
                   { label: "KVKK", url: "/kurumsal/kvkk", icon: "shield" },
-                ]}
+                ])}
               />
             </section>
 
             <section className="grid content-start gap-8">
               <FooterColumn
                 title="Hesabım & Blog"
-                items={[
+                items={dedupeByUrl([
                   ...navigation.footer_account,
                   { label: "Blog Ana Sayfa", url: "/blog", icon: "file-text" },
                   ...blogLinks,
-                ]}
+                ])}
               />
             </section>
           </div>
 
-          <Separator className="bg-[#E4E7EB]" />
+          {/* ── MOBİL ACCORDION NAV ── */}
+          <div className="footer-mobile-nav grid gap-1">
+            <MobileAccordion title="Alışveriş & Kurumsal" items={dedupeByUrl([
+              ...navigation.footer_primary,
+              { label: "Kampanyalar", url: "/kampanyalar", icon: "tag" },
+              ...navigation.footer_corporate,
+              { label: "Mesafeli Satış", url: "/kurumsal/mesafeli-satis-sozlesmesi", icon: "file-text" },
+            ])} />
+            <MobileAccordion title="Destek & Hesap" items={dedupeByUrl([
+              ...navigation.footer_support,
+              { label: "İletişim", url: "/kurumsal/iletisim", icon: "phone" },
+              { label: "KVKK", url: "/kurumsal/kvkk", icon: "shield" },
+              ...navigation.footer_account,
+            ])} />
+          </div>
 
-          <div className="grid gap-4 rounded-2xl border border-[#E4E7EB] bg-[#FAFBFC] p-6 lg:grid-cols-[0.95fr_1fr_1fr_1.2fr] lg:gap-5 lg:p-8">
+          <Separator className="bg-[#2D3A52]" />
+
+          {/* ── İLETİŞİM KARTLARI ── */}
+          <div className="footer-contact-grid grid gap-4 rounded-2xl border border-[#2D3A52] bg-[#1A2744] p-4 sm:p-6 lg:grid-cols-[0.95fr_1fr_1fr_1.2fr] lg:p-8">
             <div className="grid content-start gap-3">
               <div className="inline-flex items-center gap-2 text-[#FF7A00]">
                 <Phone size={18} />
                 <span className="text-xs font-black uppercase tracking-[0.16em]">İletişim</span>
               </div>
-              <h3 className="text-xl font-black text-[#111827]">Bize hızlıca ulaşın</h3>
-              <p className="text-sm leading-6 text-[#6B7177]">
-                WhatsApp, telefon ve adres bilgilerimiz footer içinde her zaman görünür olsun istediğin gibi ekledim.
+              <h3 className="text-lg font-black text-[#F1F5F9]">Bize hızlıca ulaşın</h3>
+              <p className="hidden text-sm leading-6 text-[#94A3B8] lg:block">
+                WhatsApp, telefon ve adres bilgilerimizle her zaman yanınızdayız.
               </p>
-              <div className="flex flex-wrap gap-3 pt-1">
-                <Button asChild variant="outline" className="h-11 rounded-xl border-[#E4E7EB] px-5">
-                  <Link href="/kurumsal/iletisim">İletişim Sayfası</Link>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button asChild variant="outline" className="h-9 rounded-xl border-[#2D3A52] px-4 text-xs text-[#F1F5F9] hover:bg-[#243363]">
+                  <Link href="/kurumsal/iletisim">İletişim</Link>
                 </Button>
-                <Button asChild className="h-11 rounded-xl px-5">
+                <Button asChild className="h-9 rounded-xl px-4 text-xs">
                   <Link href={mapsUrl} target="_blank" rel="noreferrer">
-                    Google Maps Konum
-                    <ArrowUpRight size={15} />
+                    Haritada Gör
+                    <ArrowUpRight size={13} />
                   </Link>
                 </Button>
               </div>
             </div>
 
-            <ContactCard
-              href={whatsappUrl}
-              icon={<MessageCircle size={18} />}
-              label="WhatsApp"
-              value={whatsappDisplay}
-              description="Yazılı iletişim ve hızlı bilgi için."
-              external
-            />
-            <ContactCard
-              href={phoneUrl}
-              icon={<Phone size={18} />}
-              label="Telefon"
-              value={phoneDisplay}
-              description="Sipariş ve destek hattı."
-            />
-            <ContactCard
-              href={mapsUrl}
-              icon={<MapPin size={18} />}
-              label="Adres"
-              value={addressDisplay}
-              description="Drama, Runguçpaşa Caddesi üzerinde."
-              external
-            />
+            {/* Mobilde yatay scroll, desktop'ta grid */}
+            <div className="footer-contact-cards col-span-full grid gap-3 sm:grid-cols-3 lg:col-span-3 lg:grid-cols-3">
+              <ContactCard
+                href={whatsappUrl}
+                icon={<MessageCircle size={18} />}
+                label="WhatsApp"
+                value={whatsappDisplay}
+                description="Yazılı iletişim ve hızlı bilgi."
+                external
+              />
+              <ContactCard
+                href={phoneUrl}
+                icon={<Phone size={18} />}
+                label="Telefon"
+                value={phoneDisplay}
+                description="Sipariş ve destek hattı."
+              />
+              <ContactCard
+                href={mapsUrl}
+                icon={<MapPin size={18} />}
+                label="Adres"
+                value={addressDisplay}
+                description="Drama, Runguçpaşa Caddesi."
+                external
+              />
+            </div>
           </div>
 
-          <Separator className="bg-[#E4E7EB]" />
+          <Separator className="bg-[#2D3A52]" />
 
-          <div className="rounded-2xl border border-[#E4E7EB] bg-[#FAFBFC] p-8 lg:p-10">
-            <div className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
-              <div className="grid max-w-xl gap-3">
-              <div className="inline-flex items-center gap-2 text-[#FF7A00]">
-                <Mail size={20} />
-                <span className="text-xs font-black uppercase tracking-[0.16em]">Bülten</span>
+          {/* ── BÜLTEN ── */}
+          <div className="rounded-2xl border border-[#2D3A52] bg-[#1A2744] p-5 sm:p-8 lg:p-10">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="grid gap-2 lg:max-w-xl lg:gap-3">
+                <div className="inline-flex items-center gap-2 text-[#FF7A00]">
+                  <Mail size={18} />
+                  <span className="text-xs font-black uppercase tracking-[0.16em]">Bülten</span>
+                </div>
+                <h3 className="text-lg font-black text-[#F1F5F9]">Kampanyalardan ilk sen haberdar ol</h3>
+                <p className="hidden text-sm leading-6 text-[#94A3B8] sm:block">
+                  Yeni ürünler ve özel fırsatlar için e-posta listemize katıl. Spam yok.
+                </p>
               </div>
-              <h3 className="text-xl font-black text-[#111827]">Kampanyalardan ilk sen haberdar ol</h3>
-              <p className="text-sm leading-6 text-[#6B7177]">
-                Yeni ürünler, indirimler ve özel fırsatlar için e-posta listemize katıl. Spam yok, sadece değerli
-                içerik.
-              </p>
-            </div>
               <form
-                className="flex w-full gap-3 lg:w-auto"
+                className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto"
                 onSubmit={(event) => {
                   event.preventDefault();
                   setEmail("");
@@ -243,45 +275,47 @@ export function Footer({ compact = false }: FooterProps) {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="E-posta adresiniz"
-                  className="h-12 w-full rounded-xl border border-[#E4E7EB] bg-white px-5 text-sm text-[#111827] placeholder:text-[#9AA3AF] focus:border-[#FF7A00] focus:outline-none focus:ring-2 focus:ring-[#FF7A00]/10 lg:w-80"
+                  className="h-11 w-full rounded-xl border border-[#2D3A52] bg-[#0F1A2E] px-4 text-sm text-[#F1F5F9] placeholder:text-[#4B5E7A] focus:border-[#FF7A00] focus:outline-none focus:ring-2 focus:ring-[#FF7A00]/20 sm:w-72"
                   required
                 />
-                <Button type="submit" className="h-12 rounded-xl px-8 whitespace-nowrap">
+                <Button type="submit" className="h-11 w-full rounded-xl px-6 sm:w-auto">
                   Abone Ol
                 </Button>
               </form>
             </div>
           </div>
 
-          <Separator className="bg-[#E4E7EB]" />
+          <Separator className="bg-[#2D3A52]" />
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          {/* ── TRUST NOTES — mobilde gizli ── */}
+          <div className="footer-trust-notes hidden gap-4 sm:grid sm:grid-cols-3">
             {footerNotes.map((item) => (
               <div
                 key={item.title}
-                className="flex items-start gap-4 rounded-2xl border border-[#E4E7EB] bg-white p-6"
+                className="flex items-start gap-4 rounded-2xl border border-[#2D3A52] bg-[#1A2744] p-5"
               >
                 <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FFF3E6] text-[#FF7A00]">
                   {item.icon}
                 </div>
                 <div className="grid gap-1">
-                  <strong className="text-sm font-black text-[#111827]">{item.title}</strong>
-                  <p className="text-sm leading-6 text-[#6B7177]">{item.description}</p>
+                  <strong className="text-sm font-black text-[#F1F5F9]">{item.title}</strong>
+                  <p className="text-sm leading-6 text-[#94A3B8]">{item.description}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <Separator className="bg-[#E4E7EB]" />
+          <Separator className="footer-trust-notes hidden bg-[#2D3A52] sm:block" />
 
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap items-center gap-4">
-              <span className="text-xs font-black uppercase tracking-[0.14em] text-[#6B7177]">Ödeme</span>
+          {/* ── ÖDEME & GÜVENLİK ── */}
+          <div className="footer-payments flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs font-black uppercase tracking-[0.14em] text-[#94A3B8]">Ödeme</span>
               <div className="flex items-center gap-2">
                 {cardLogos.map((card) => (
                   <div
                     key={card.name}
-                    className="flex h-9 items-center justify-center rounded-lg border border-[#E4E7EB] bg-white px-3"
+                    className="flex h-8 items-center justify-center rounded-lg border border-[#2D3A52] bg-[#1A2744] px-2.5"
                     title={card.name}
                   >
                     <Image
@@ -289,18 +323,17 @@ export function Footer({ compact = false }: FooterProps) {
                       alt={card.name}
                       width={40}
                       height={24}
-                      className="h-auto max-h-5 w-auto"
+                      className="h-auto max-h-[18px] w-auto"
                     />
                   </div>
                 ))}
               </div>
-
-              <span className="text-xs font-black uppercase tracking-[0.14em] text-[#6B7177]">Yemek</span>
+              <span className="text-xs font-black uppercase tracking-[0.14em] text-[#94A3B8]">Yemek</span>
               <div className="flex items-center gap-2">
                 {mealCardLogos.map((card) => (
                   <div
                     key={card.name}
-                    className="flex h-9 items-center justify-center rounded-lg border border-[#E4E7EB] bg-white px-3"
+                    className="flex h-8 items-center justify-center rounded-lg border border-[#E4E7EB] bg-white px-2.5"
                     title={card.name}
                   >
                     <Image
@@ -308,25 +341,24 @@ export function Footer({ compact = false }: FooterProps) {
                       alt={card.name}
                       width={40}
                       height={24}
-                      className="h-auto max-h-5 w-auto"
+                      className="h-auto max-h-[18px] w-auto"
                     />
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <span className="text-xs font-black uppercase tracking-[0.14em] text-[#6B7177]">Güvenlik</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-[0.14em] text-[#94A3B8]">Güvenlik</span>
               <div className="flex items-center gap-2">
                 {[
-                  { name: "SSL", icon: <Lock size={14} /> },
-                  { name: "256-bit", icon: <ShieldCheck size={14} /> },
-                  { name: "3D Secure", icon: <CreditCard size={14} /> },
+                  { name: "SSL", icon: <Lock size={13} /> },
+                  { name: "256-bit", icon: <ShieldCheck size={13} /> },
+                  { name: "3D Secure", icon: <CreditCard size={13} /> },
                 ].map((item) => (
                   <div
                     key={item.name}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#E4E7EB] bg-white px-3 py-2 text-[#6B7177]"
-                    title={item.name}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#2D3A52] bg-[#1A2744] px-2.5 py-1.5 text-[#94A3B8]"
                   >
                     <span className="text-[#FF7A00]">{item.icon}</span>
                     <span className="text-xs font-semibold">{item.name}</span>
@@ -336,34 +368,27 @@ export function Footer({ compact = false }: FooterProps) {
             </div>
           </div>
 
-          <Separator className="bg-[#E4E7EB]" />
+          <Separator className="bg-[#2D3A52]" />
 
-          <div className="flex flex-col gap-4 text-sm text-[#6B7177] lg:flex-row lg:items-center lg:justify-between">
-            <p>© 2026 Karacabey Gross Market. Sipariş, ödeme ve teslimat yüzeyleri profesyonel şekilde korunur.</p>
-            <div className="flex flex-wrap gap-6">
-              <Link href="/kurumsal/kvkk" className="transition-colors hover:text-[#111827]">
-                KVKK
-              </Link>
-              <Link href="/kurumsal/mesafeli-satis-sozlesmesi" className="transition-colors hover:text-[#111827]">
-                Mesafeli Satış
-              </Link>
-              <Link href="/kurumsal/odeme-guvenligi" className="transition-colors hover:text-[#111827]">
-                Ödeme Güvenliği
-              </Link>
-              <Link href="/kurumsal/iletisim" className="transition-colors hover:text-[#111827]">
-                İletişim
-              </Link>
-              <Link href="/blog" className="transition-colors hover:text-[#111827]">
-                Blog
-              </Link>
+          {/* ── COPYRIGHT ── */}
+          <div className="flex flex-col gap-3 text-xs text-[#94A3B8] sm:flex-row sm:items-center sm:justify-between sm:text-sm">
+            <p>© 2026 Karacabey Gross Market. Tüm hakları saklıdır.</p>
+            <div className="flex flex-wrap gap-4">
+              <Link href="/kurumsal/kvkk" className="transition-colors hover:text-[#FF7A00]">KVKK</Link>
+              <Link href="/kurumsal/mesafeli-satis-sozlesmesi" className="transition-colors hover:text-[#FF7A00]">Mesafeli Satış</Link>
+              <Link href="/kurumsal/odeme-guvenligi" className="transition-colors hover:text-[#FF7A00]">Ödeme Güvenliği</Link>
+              <Link href="/kurumsal/iletisim" className="transition-colors hover:text-[#FF7A00]">İletişim</Link>
+              <Link href="/blog" className="transition-colors hover:text-[#FF7A00]">Blog</Link>
             </div>
           </div>
+
         </div>
       </div>
     </footer>
   );
 }
 
+// ─── Desktop Footer Column ───────────────────────────────────────────────────
 type FooterColumnProps = {
   title: string;
   items: Array<NavigationItem | { label: string; url: string; icon?: string | null }>;
@@ -372,18 +397,18 @@ type FooterColumnProps = {
 function FooterColumn({ title, items }: FooterColumnProps) {
   return (
     <nav className="grid content-start gap-4" aria-label={title}>
-      <strong className="text-sm font-black uppercase tracking-[0.16em] text-[#111827]">{title}</strong>
+      <strong className="text-sm font-black uppercase tracking-[0.16em] text-[#94A3B8]">{title}</strong>
       <div className="grid gap-2">
-        {items.map((item) => (
+        {items.map((item, index) => (
           <Link
-            key={`${item.label}-${item.url}`}
+            key={`${index}-${item.url}`}
             href={item.url}
             target={"external" in item && item.external ? "_blank" : undefined}
             rel={"external" in item && item.external ? "noreferrer" : undefined}
-            className="inline-flex items-start gap-2.5 rounded-lg px-1 py-1.5 text-sm font-semibold text-[#6B7177] transition hover:bg-[#F3F4F6] hover:text-[#111827]"
+            className="inline-flex items-start gap-2.5 rounded-lg px-1 py-1.5 text-sm font-semibold text-[#94A3B8] transition hover:bg-[#1A2744] hover:text-white"
           >
-            <span className="mt-0.5 text-[#9AA3AF]">
-              <NavIcon name={item.icon} size={16} />
+            <span className="mt-0.5 text-[#4B5E7A]">
+              <NavIcon name={item.icon} size={15} />
             </span>
             <span className="line-clamp-2">{item.label}</span>
           </Link>
@@ -393,6 +418,52 @@ function FooterColumn({ title, items }: FooterColumnProps) {
   );
 }
 
+// ─── Mobile Accordion Nav ────────────────────────────────────────────────────
+type MobileAccordionProps = {
+  title: string;
+  items: Array<{ label: string; url: string; icon?: string | null }>;
+};
+
+function MobileAccordion({ title, items }: MobileAccordionProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[#2D3A52] bg-[#1A2744]">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        <span className="text-sm font-black text-[#F1F5F9]">{title}</span>
+        <ChevronDown
+          size={16}
+          className="shrink-0 text-[#94A3B8] transition-transform duration-200"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        />
+      </button>
+
+      {open && (
+        <div className="grid grid-cols-2 gap-1 border-t border-[#2D3A52] px-3 pb-3 pt-2">
+          {items.map((item, index) => (
+            <Link
+              key={`mobile-${index}-${item.url}`}
+              href={item.url}
+              className="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-[#94A3B8] transition hover:text-white active:text-[#FF7A00]"
+            >
+              <span className="text-[#FF7A00]">
+                <NavIcon name={item.icon} size={14} />
+              </span>
+              <span className="line-clamp-1">{item.label}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Contact Card ────────────────────────────────────────────────────────────
 function ContactCard({
   href,
   icon,
@@ -413,15 +484,15 @@ function ContactCard({
       href={href}
       target={external ? "_blank" : undefined}
       rel={external ? "noreferrer" : undefined}
-      className="grid content-start gap-3 rounded-2xl border border-[#E4E7EB] bg-white p-5 transition hover:border-[#FFD7B5] hover:bg-[#FFF9F2]"
+      className="grid content-start gap-3 rounded-2xl border border-[#2D3A52] bg-[#1A2744] p-4 transition hover:border-[#FF7A00] hover:bg-[#1F2F4A] active:bg-[#243363]"
     >
-      <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#FFF3E6] text-[#FF7A00]">
+      <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFF3E6] text-[#FF7A00]">
         {icon}
       </div>
-      <div className="grid gap-1">
-        <span className="text-xs font-black uppercase tracking-[0.16em] text-[#6B7177]">{label}</span>
-        <strong className="text-sm font-black leading-6 text-[#111827]">{value}</strong>
-        <span className="text-sm leading-6 text-[#6B7177]">{description}</span>
+      <div className="grid gap-0.5">
+        <span className="text-xs font-black uppercase tracking-[0.16em] text-[#4B5E7A]">{label}</span>
+        <strong className="text-sm font-black leading-5 text-[#F1F5F9]">{value}</strong>
+        <span className="text-xs leading-5 text-[#94A3B8]">{description}</span>
       </div>
     </Link>
   );

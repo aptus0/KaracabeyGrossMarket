@@ -22,6 +22,7 @@ type CheckoutResponse = {
 type CheckoutFormProps = {
   items: CheckoutFormItem[];
   cartToken?: string | null;
+  couponCode?: string | null;
   disabled?: boolean;
 };
 
@@ -40,7 +41,7 @@ const checkoutSchema = z.object({
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
-export function CheckoutForm({ items, cartToken, disabled = false }: CheckoutFormProps) {
+export function CheckoutForm({ items, cartToken, couponCode, disabled = false }: CheckoutFormProps) {
   const token = useAuthStore((state) => state.token);
   const [error, setError] = useState<string | null>(null);
   const {
@@ -64,6 +65,7 @@ export function CheckoutForm({ items, cartToken, disabled = false }: CheckoutFor
         body: JSON.stringify({
           ...values,
           cart_token: !token ? cartToken ?? undefined : undefined,
+          coupon_code: couponCode ?? undefined,
           items: items.map((item) => ({
             product_id: item.productId,
             quantity: item.quantity,

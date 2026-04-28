@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-
-import { AddressCard } from "@/app/_components/AddressCard";
+import { AccountAddresses } from "@/app/_components/AccountAddresses";
 import { AppLayout } from "@/app/_layouts/AppLayout";
-import { accountAddresses } from "@/lib/catalog";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -25,7 +23,6 @@ export default function AddressesPage() {
           <p className="eyebrow">Teslimat Noktaları</p>
           <h1>Adreslerim</h1>
         </div>
-
         <Link className="secondary-action" href="/account#addresses">
           Hesabımda Aç
         </Link>
@@ -38,15 +35,7 @@ export default function AddressesPage() {
             <h2>Hızlı teslimat için hazır konumlar</h2>
           </div>
         </div>
-
-        <div className="info-grid">
-          {accountAddresses.map((address) => (
-            <AddressCard
-              key={address.title}
-              address={address}
-            />
-          ))}
-        </div>
+        <AccountAddresses />
       </section>
     </AppLayout>
   );

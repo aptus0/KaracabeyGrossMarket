@@ -1,41 +1,81 @@
+"use client";
+
 import Link from "next/link";
-import { ShoppingCart } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+import { Search, ShoppingCart, X } from "lucide-react";
 import { KgmLogo } from "@/app/_components/KgmLogo";
-import { NavIcon } from "@/app/_components/NavIcon";
-import { SearchBar } from "@/app/_components/SearchBar";
-import type { NavigationData } from "@/lib/navigation";
+import { cartItemCount } from "@/lib/cart";
+import { useCartStore } from "@/lib/cart-store";
 
-type MobileHeaderProps = {
-  navigation: NavigationData;
-};
+export function MobileHeader() {
+  const cartCount = useCartStore((state) => cartItemCount(state.items));
+  const openCartSheet = useCartStore((state) => state.openSheet);
+  const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
-export function MobileHeader({ navigation }: MobileHeaderProps) {
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const q = query.trim();
+    if (q) {
+      router.push(`/products?q=${encodeURIComponent(q)}`);
+    }
+  }
+
+  function handleClear() {
+    setQuery("");
+    inputRef.current?.focus();
+  }
+
   return (
-    <div className="mobile-header">
+    <header className="mobile-header">
+      {/* Top bar: Logo + Cart */}
       <div className="mobile-header__top">
-        <Link className="brand-mark" href="/">
+        <Link href="/" className="brand-mark" aria-label="Karacabey Gross Market">
           <KgmLogo compact />
         </Link>
-        <Link className="header-action" href="/checkout">
-          <ShoppingCart size={18} />
-          Sepet
-        </Link>
+
+        <button
+          type="button"
+          className="mobile-header__cart"
+          aria-label="Sepeti aç"
+          onClick={openCartSheet}
+        >
+          <ShoppingCart size={20} />
+          {cartCount > 0 ? (
+            <span className="mobile-header__cart-badge">{cartCount}</span>
+          ) : null}
+        </button>
       </div>
-      <SearchBar compact />
-      <nav className="mobile-header__links" aria-label="Mobil header menusu">
-        {navigation.category.slice(0, 1).map((item) => (
-          <Link key={`category-${item.label}-${item.url}`} href={item.url} target={item.external ? "_blank" : undefined}>
-            <NavIcon name={item.icon} />
-            Kategoriler
-          </Link>
-        ))}
-        {navigation.header.slice(0, 4).map((item) => (
-          <Link key={`${item.label}-${item.url}`} href={item.url} target={item.external ? "_blank" : undefined}>
-            <NavIcon name={item.icon} />
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-    </div>
+
+      {/* Search bar */}
+      <form className="mobile-header__search" onSubmit={handleSearch} role="search">
+        <span className="mobile-header__search-icon" aria-hidden="true">
+          <Search size={16} />
+        </span>
+        <input
+          ref={inputRef}
+          type="search"
+          placeholder="Ürün, marka veya kategori ara…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Ürün ara"
+        />
+        {query.length > 0 ? (
+          <button
+            type="button"
+            className="mobile-header__search-clear"
+            aria-label="Aramayı temizle"
+            onClick={handleClear}
+          >
+            <X size={14} />
+          </button>
+        ) : null}
+        <button type="submit" className="mobile-header__search-btn">
+          Ara
+        </button>
+      </form>
+    </header>
   );
 }

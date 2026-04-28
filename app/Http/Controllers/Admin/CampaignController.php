@@ -16,66 +16,121 @@ class CampaignController extends Controller
     public function index(): View
     {
         return view('admin.campaigns.index', [
-            'campaigns' => Campaign::query()->with('coupons')->latest()->paginate(20),
-            'coupons' => Coupon::query()->with('campaign')->latest()->paginate(20),
+            'campaigns' => Campaign::query()->with('coupons')->orderBy('sort_order')->latest()->paginate(20),
+            'coupons'   => Coupon::query()->with('campaign')->latest()->paginate(20),
         ]);
     }
 
     public function store(Request $request, TenantResolver $tenants): RedirectResponse
     {
-        $tenant = $tenants->resolve($request);
+        $tenant   = $tenants->resolve($request);
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:1000'],
+            'name'             => ['required', 'string', 'max:255'],
+            'slug'             => ['nullable', 'string', 'max:255'],
+            'description'      => ['nullable', 'string', 'max:1000'],
+            'body'             => ['nullable', 'string'],
             'banner_image_url' => ['nullable', 'url', 'max:500'],
-            'discount_type' => ['required', 'in:fixed,percent'],
-            'discount_value' => ['required', 'integer', 'min:0'],
-            'starts_at' => ['nullable', 'date'],
-            'ends_at' => ['nullable', 'date'],
-            'is_active' => ['sometimes', 'boolean'],
-            'seo_title' => ['nullable', 'string', 'max:255'],
-            'seo_description' => ['nullable', 'string', 'max:500'],
+            'meta_image_url'   => ['nullable', 'url', 'max:500'],
+            'badge_label'      => ['nullable', 'string', 'max:60'],
+            'color_hex'        => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'discount_type'    => ['required', 'in:fixed,percent'],
+            'discount_value'   => ['required', 'integer', 'min:0'],
+            'starts_at'        => ['nullable', 'date'],
+            'ends_at'          => ['nullable', 'date'],
+            'sort_order'       => ['nullable', 'integer', 'min:0'],
+            'is_active'        => ['sometimes', 'boolean'],
+            'seo_title'        => ['nullable', 'string', 'max:255'],
+            'seo_description'  => ['nullable', 'string', 'max:500'],
         ]);
-        $validated['slug'] = $validated['slug'] ?: Str::slug($validated['name']);
-        $seo = [
-            'title' => $validated['seo_title'] ?? $validated['name'],
+
+        $validated['slug']  = $validated['slug'] ?: Str::slug($validated['name']);
+        $validated['seo']   = [
+            'title'       => $validated['seo_title'] ?? $validated['name'],
             'description' => $validated['seo_description'] ?? $validated['description'] ?? null,
         ];
+        $validated['is_active']  = $request->boolean('is_active');
+        $validated['sort_order'] = $validated['sort_order'] ?? 0;
+        $validated['color_hex']  = $validated['color_hex'] ?? '#FF7A00';
+
         unset($validated['seo_title'], $validated['seo_description']);
 
-        Campaign::query()->create($validated + [
-            'tenant_id' => $tenant->id,
-            'is_active' => $request->boolean('is_active'),
-            'seo' => $seo,
+        Campaign::query()->create($validated + ['tenant_id' => $tenant->id]);
+
+        return back()->with('status', 'Kampanya oluşturuldu.');
+    }
+
+    public function edit(Campaign $campaign): View
+    {
+        return view('admin.campaigns.edit', [
+            'campaign' => $campaign,
+        ]);
+    }
+
+    public function update(Request $request, Campaign $campaign): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name'             => ['required', 'string', 'max:255'],
+            'slug'             => ['nullable', 'string', 'max:255'],
+            'description'      => ['nullable', 'string', 'max:1000'],
+            'body'             => ['nullable', 'string'],
+            'banner_image_url' => ['nullable', 'url', 'max:500'],
+            'meta_image_url'   => ['nullable', 'url', 'max:500'],
+            'badge_label'      => ['nullable', 'string', 'max:60'],
+            'color_hex'        => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'discount_type'    => ['required', 'in:fixed,percent'],
+            'discount_value'   => ['required', 'integer', 'min:0'],
+            'starts_at'        => ['nullable', 'date'],
+            'ends_at'          => ['nullable', 'date'],
+            'sort_order'       => ['nullable', 'integer', 'min:0'],
+            'is_active'        => ['sometimes', 'boolean'],
+            'seo_title'        => ['nullable', 'string', 'max:255'],
+            'seo_description'  => ['nullable', 'string', 'max:500'],
         ]);
 
-        return back()->with('status', 'Kampanya olusturuldu.');
+        $validated['slug']       = $validated['slug'] ?: Str::slug($validated['name']);
+        $validated['is_active']  = $request->boolean('is_active');
+        $validated['sort_order'] = $validated['sort_order'] ?? 0;
+        $validated['color_hex']  = $validated['color_hex'] ?? '#FF7A00';
+        $validated['seo']        = [
+            'title'       => $validated['seo_title'] ?? $validated['name'],
+            'description' => $validated['seo_description'] ?? $validated['description'] ?? null,
+        ];
+
+        unset($validated['seo_title'], $validated['seo_description']);
+
+        $campaign->update($validated);
+
+        return back()->with('status', 'Kampanya güncellendi.');
+    }
+
+    public function destroy(Campaign $campaign): RedirectResponse
+    {
+        $campaign->delete();
+
+        return redirect()->route('admin.campaigns.index')->with('status', 'Kampanya silindi.');
     }
 
     public function storeCoupon(Request $request, TenantResolver $tenants): RedirectResponse
     {
-        $tenant = $tenants->resolve($request);
+        $tenant   = $tenants->resolve($request);
         $validated = $request->validate([
-            'campaign_id' => ['nullable', 'exists:campaigns,id'],
-            'code' => ['required', 'alpha_dash', 'max:64'],
-            'discount_type' => ['required', 'in:fixed,percent'],
-            'discount_value' => ['required', 'integer', 'min:0'],
-            'minimum_order_cents' => ['nullable', 'integer', 'min:0'],
-            'usage_limit' => ['nullable', 'integer', 'min:1'],
-            'starts_at' => ['nullable', 'date'],
-            'ends_at' => ['nullable', 'date'],
-            'is_active' => ['sometimes', 'boolean'],
+            'campaign_id'          => ['nullable', 'exists:campaigns,id'],
+            'code'                 => ['required', 'alpha_dash', 'max:64'],
+            'discount_type'        => ['required', 'in:fixed,percent'],
+            'discount_value'       => ['required', 'integer', 'min:0'],
+            'minimum_order_cents'  => ['nullable', 'integer', 'min:0'],
+            'usage_limit'          => ['nullable', 'integer', 'min:1'],
+            'starts_at'            => ['nullable', 'date'],
+            'ends_at'              => ['nullable', 'date'],
+            'is_active'            => ['sometimes', 'boolean'],
         ]);
 
-        $validated['code'] = Str::upper($validated['code']);
+        $validated['code']                = Str::upper($validated['code']);
         $validated['minimum_order_cents'] = $validated['minimum_order_cents'] ?? 0;
-        $validated['is_active'] = $request->boolean('is_active');
+        $validated['is_active']           = $request->boolean('is_active');
 
-        Coupon::query()->create($validated + [
-            'tenant_id' => $tenant->id,
-        ]);
+        Coupon::query()->create($validated + ['tenant_id' => $tenant->id]);
 
-        return back()->with('status', 'Kupon olusturuldu.');
+        return back()->with('status', 'Kupon oluşturuldu.');
     }
 }

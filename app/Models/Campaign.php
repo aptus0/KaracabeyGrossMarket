@@ -16,22 +16,28 @@ class Campaign extends Model
         'name',
         'slug',
         'description',
+        'body',
         'banner_image_url',
+        'meta_image_url',
+        'badge_label',
+        'color_hex',
         'discount_type',
         'discount_value',
         'starts_at',
         'ends_at',
         'is_active',
+        'sort_order',
         'seo',
     ];
 
     protected function casts(): array
     {
         return [
-            'starts_at' => 'datetime',
-            'ends_at' => 'datetime',
-            'is_active' => 'boolean',
-            'seo' => 'array',
+            'starts_at'  => 'datetime',
+            'ends_at'    => 'datetime',
+            'is_active'  => 'boolean',
+            'sort_order' => 'integer',
+            'seo'        => 'array',
         ];
     }
 
@@ -43,5 +49,15 @@ class Campaign extends Model
     public function coupons(): HasMany
     {
         return $this->hasMany(Coupon::class);
+    }
+
+    /** Kullanıcıya gösterilecek indirim etiketi */
+    public function getDiscountLabelAttribute(): string
+    {
+        if ($this->discount_type === 'percent') {
+            return "%{$this->discount_value} İndirim";
+        }
+
+        return number_format($this->discount_value / 100, 2, ',', '.') . ' ₺ İndirim';
     }
 }

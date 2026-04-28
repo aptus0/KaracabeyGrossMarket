@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\CartItem;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -36,6 +37,7 @@ class CheckoutController extends Controller
             'items' => ['sometimes', 'array', 'min:1'],
             'items.*.product_id' => ['required_with:items', 'integer', 'exists:products,id'],
             'items.*.quantity' => ['required_with:items', 'integer', 'min:1', 'max:99'],
+            'coupon_code' => ['nullable', 'string', 'max:64'],
         ]);
 
         $tenant = $tenants->resolve($request);
@@ -45,8 +47,10 @@ class CheckoutController extends Controller
 
         abort_if($checkoutItems->isEmpty(), 422, 'Sepet bos.');
 
+        $couponCode = strtoupper(trim((string) ($validated['coupon_code'] ?? '')));
+
         /** @var Order $order */
-        $order = DB::transaction(function () use ($validated, $tenant, $user, $cartToken, $checkoutItems): Order {
+        $order = DB::transaction(function () use ($validated, $tenant, $user, $cartToken, $checkoutItems, $couponCode): Order {
             $products = Product::query()
                 ->whereBelongsTo($tenant)
                 ->where('is_active', true)
@@ -55,7 +59,6 @@ class CheckoutController extends Controller
                 ->get()
                 ->keyBy('id');
 
-            $subtotal = 0;
             $merchantOid = $this->makeMerchantOid();
             $checkoutRef = $this->makeCheckoutRef();
 
@@ -84,35 +87,21 @@ class CheckoutController extends Controller
                 ],
             ]);
 
-            foreach ($checkoutItems as $item) {
-                $product = $products->get($item['product_id']);
-
-                abort_if(! $product, 422, 'Sepette gecersiz urun var.');
-                abort_if($product->stock_quantity < $item['quantity'], 422, $product->name.' icin stok yetersiz.');
-
-                $lineTotal = $product->price_cents * $item['quantity'];
-                $subtotal += $lineTotal;
-                $product->decrement('stock_quantity', $item['quantity']);
-
-                $order->items()->create([
-                    'product_id' => $product->id,
-                    'name' => $product->name,
-                    'unit_price_cents' => $product->price_cents,
-                    'quantity' => $item['quantity'],
-                    'line_total_cents' => $lineTotal,
-                ]);
-            }
+            $subtotal = $this->buildOrderItems($order, $checkoutItems, $products);
+            $discountCents = $this->resolveCouponDiscount($subtotal, $couponCode, $tenant->id);
+            $totalCents = max(0, $subtotal - $discountCents);
 
             $order->update([
                 'subtotal_cents' => $subtotal,
-                'total_cents' => $subtotal,
+                'discount_cents' => $discountCents,
+                'total_cents' => $totalCents,
             ]);
 
             $order->payment()->create([
                 'provider' => 'paytr',
                 'merchant_oid' => $merchantOid,
                 'status' => PaymentStatus::Pending,
-                'amount_cents' => $subtotal,
+                'amount_cents' => $totalCents,
                 'currency' => config('paytr.currency', 'TL'),
             ]);
 
@@ -149,6 +138,71 @@ class CheckoutController extends Controller
                 'checkout_url' => route('checkout.session', ['order' => $order->checkout_ref]),
             ],
         ], 201);
+    }
+
+    /**
+     * @param  Collection<int, array{product_id: int, quantity: int}>  $checkoutItems
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Product>  $products
+     */
+    private function buildOrderItems(Order $order, Collection $checkoutItems, \Illuminate\Database\Eloquent\Collection $products): int
+    {
+        $subtotal = 0;
+
+        foreach ($checkoutItems as $item) {
+            $product = $products->get($item['product_id']);
+
+            abort_if(! $product, 422, 'Sepette gecersiz urun var.');
+            abort_if($product->stock_quantity < $item['quantity'], 422, $product->name.' icin stok yetersiz.');
+
+            $lineTotal = $product->price_cents * $item['quantity'];
+            $subtotal += $lineTotal;
+            $product->decrement('stock_quantity', $item['quantity']);
+
+            $order->items()->create([
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'unit_price_cents' => $product->price_cents,
+                'quantity' => $item['quantity'],
+                'line_total_cents' => $lineTotal,
+            ]);
+        }
+
+        return $subtotal;
+    }
+
+    private function resolveCouponDiscount(int $subtotal, string $couponCode, int $tenantId): int
+    {
+        if ($couponCode === '') {
+            return 0;
+        }
+
+        $coupon = Coupon::query()
+            ->where('tenant_id', $tenantId)
+            ->where('code', $couponCode)
+            ->where('is_active', true)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $coupon) {
+            return 0;
+        }
+
+        $notStarted = $coupon->starts_at !== null && $coupon->starts_at->isFuture();
+        $expired = $coupon->ends_at !== null && $coupon->ends_at->isPast();
+        $limitReached = $coupon->usage_limit !== null && $coupon->used_count >= $coupon->usage_limit;
+        $belowMinimum = $subtotal < $coupon->minimum_order_cents;
+
+        if ($notStarted || $expired || $limitReached || $belowMinimum) {
+            return 0;
+        }
+
+        $discountCents = $coupon->discount_type === 'percent'
+            ? (int) round($subtotal * $coupon->discount_value / 100)
+            : min($coupon->discount_value, $subtotal);
+
+        $coupon->increment('used_count');
+
+        return $discountCents;
     }
 
     /**

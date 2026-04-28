@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import {
   filterProducts as fallbackFilterProducts,
   findProduct as fallbackFindProduct,
+  type KgmCategory,
   type KgmProduct,
 } from "@/lib/catalog";
 
@@ -164,6 +165,35 @@ export async function fetchStorefrontProducts(options?: {
       products: fallbackProducts.slice(0, perPage),
       total: fallbackProducts.length,
     };
+  }
+}
+
+type CategoryIndexResponse = {
+  data?: Array<{
+    id: number;
+    name: string;
+    slug: string;
+    description?: string | null;
+    image_url?: string | null;
+  }>;
+};
+
+export async function fetchStorefrontCategories(): Promise<KgmCategory[]> {
+  try {
+    const response = await fetch(buildServerApiUrl("/api/v1/categories"), {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Categories request failed with ${response.status}.`);
+    }
+
+    const payload = (await response.json()) as CategoryIndexResponse;
+
+    return (payload.data ?? []).map((c) => ({ slug: c.slug, name: c.name }));
+  } catch {
+    return [];
   }
 }
 

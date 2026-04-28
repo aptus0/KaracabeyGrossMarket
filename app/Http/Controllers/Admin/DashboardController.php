@@ -24,14 +24,17 @@ class DashboardController extends Controller
 
         return view('admin.dashboard', [
             'stats' => [
-                'products' => Product::query()->count(),
-                'orders' => Order::query()->count(),
+                'products'         => Product::query()->count(),
+                'orders'           => Order::query()->count(),
                 'awaiting_payment' => Order::query()->where('status', OrderStatus::AwaitingPayment)->count(),
-                'paid_payments' => Payment::query()->where('status', PaymentStatus::Paid)->count(),
-                'users' => User::query()->count(),
+                'paid_payments'    => Payment::query()->where('status', PaymentStatus::Paid)->count(),
+                'users'            => User::query()->count(),
             ],
-            'orders' => Order::query()->with('payment')->latest()->limit(8)->get(),
-            'chartData' => $chartData,
+            'orders'         => Order::query()->with('payment')->latest()->limit(8)->get(),
+            'chartData'      => $chartData,
+            'totalRevenue'   => Payment::query()->where('status', PaymentStatus::Paid)->sum('amount_cents') ?? 0,
+            'totalOrders'    => Order::query()->count(),
+            'totalCustomers' => User::query()->count(),
         ]);
     }
 }

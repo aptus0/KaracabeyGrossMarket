@@ -55,7 +55,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::resource('navigation', AdminNavigationItemController::class)
             ->only(['index', 'store', 'update', 'destroy'])
             ->parameters(['navigation' => 'navigationItem']);
-        Route::resource('campaigns', AdminCampaignController::class)->only(['index', 'store']);
+        Route::resource('campaigns', AdminCampaignController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
         Route::post('coupons', [AdminCampaignController::class, 'storeCoupon'])->name('coupons.store');
         Route::get('marketing', [AdminMarketingSettingController::class, 'edit'])->name('marketing.edit');
         Route::put('marketing', [AdminMarketingSettingController::class, 'update'])->name('marketing.update');

@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-
-import { ProductGrid } from "@/app/_components/ProductGrid";
+import { FavoritesList } from "@/app/_components/FavoritesList";
 import { AppLayout } from "@/app/_layouts/AppLayout";
-import { products } from "@/lib/catalog";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -25,7 +23,6 @@ export default function FavoritesPage() {
           <p className="eyebrow">Kayıtlı Ürünler</p>
           <h1>Favoriler</h1>
         </div>
-
         <Link className="secondary-action" href="/products">
           Alışverişe Dön
         </Link>
@@ -38,8 +35,7 @@ export default function FavoritesPage() {
             <h2>Tekrar almak isteyebileceğin ürünler</h2>
           </div>
         </div>
-
-        <ProductGrid products={products.slice(0, 4)} />
+        <FavoritesList />
       </section>
     </AppLayout>
   );
