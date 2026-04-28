@@ -83,6 +83,44 @@ class ProductController extends Controller
     }
 
     /**
+     * Toplu işlem: seçili ürünleri aktif/pasif yap veya sıfır stokluları pasif et.
+     */
+    public function bulkAction(Request $request, TenantResolver $tenants): RedirectResponse
+    {
+        $tenant = $tenants->resolve($request);
+        $action = $request->input('action');
+
+        switch ($action) {
+            case 'deactivate_zero_stock':
+                $count = Product::query()
+                    ->where('tenant_id', $tenant->id)
+                    ->where('stock_quantity', 0)
+                    ->where('is_active', true)
+                    ->update(['is_active' => false]);
+                return redirect()->route('admin.products.index')
+                    ->with('status', "{$count} ürün pasif edildi (sıfır stok).");
+
+            case 'activate':
+                $ids = $request->array('ids');
+                Product::query()->where('tenant_id', $tenant->id)
+                    ->whereIn('id', $ids)->update(['is_active' => true]);
+                return redirect()->route('admin.products.index')
+                    ->with('status', count($ids) . ' ürün aktif edildi.');
+
+            case 'deactivate':
+                $ids = $request->array('ids');
+                Product::query()->where('tenant_id', $tenant->id)
+                    ->whereIn('id', $ids)->update(['is_active' => false]);
+                return redirect()->route('admin.products.index')
+                    ->with('status', count($ids) . ' ürün pasif edildi.');
+
+            default:
+                return redirect()->route('admin.products.index')
+                    ->with('error', 'Bilinmeyen işlem.');
+        }
+    }
+
+    /**
      * Güvenli slug oluşturur (benzersizlik kontrolü ile)
      */
     private function generateSlug(?string $slug, string $name, ?Product $product = null): string

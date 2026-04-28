@@ -87,6 +87,29 @@
             </nav>
         </div>
 
+        <!-- ERP Modülleri -->
+        <div>
+            <h4 class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">ERP Entegrasyonu</h4>
+            <nav class="space-y-1">
+                <a href="{{ route('admin.erp.import') }}" class="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all {{ request()->routeIs('admin.erp.import*') ? 'bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-[0_14px_32px_rgba(249,115,22,0.24)]' : 'text-slate-600 hover:bg-orange-50 hover:text-orange-700' }}">
+                    <x-lucide-database class="h-4 w-4" />
+                    İçe Aktar (SQL)
+                </a>
+                <a href="{{ route('admin.erp.fatura') }}" class="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all {{ request()->routeIs('admin.erp.fatura*') ? 'bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-[0_14px_32px_rgba(249,115,22,0.24)]' : 'text-slate-600 hover:bg-orange-50 hover:text-orange-700' }}">
+                    <x-lucide-file-text class="h-4 w-4" />
+                    Fatura Takibi
+                </a>
+                <a href="{{ route('admin.erp.cari') }}" class="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all {{ request()->routeIs('admin.erp.cari*') ? 'bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-[0_14px_32px_rgba(249,115,22,0.24)]' : 'text-slate-600 hover:bg-orange-50 hover:text-orange-700' }}">
+                    <x-lucide-users class="h-4 w-4" />
+                    Cari Takibi
+                </a>
+                <a href="{{ route('admin.erp.sayim') }}" class="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all {{ request()->routeIs('admin.erp.sayim*') ? 'bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-[0_14px_32px_rgba(249,115,22,0.24)]' : 'text-slate-600 hover:bg-orange-50 hover:text-orange-700' }}">
+                    <x-lucide-clipboard-list class="h-4 w-4" />
+                    Stok Sayımı
+                </a>
+            </nav>
+        </div>
+
         <!-- Ayarlar -->
         <div>
             <h4 class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Sistem</h4>
@@ -96,6 +119,7 @@
                     Google & Meta (Pixel)
                 </a>
                 
+
                 <form action="{{ route('admin.logout') }}" method="POST" class="mt-4">
                     @csrf
                     <button type="submit" class="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium text-rose-600 transition-all hover:bg-rose-50">
