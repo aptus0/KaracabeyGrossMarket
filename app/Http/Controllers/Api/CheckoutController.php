@@ -79,94 +79,94 @@ class CheckoutController extends Controller
                         ->get()
                         ->keyBy('id');
 
-                $merchantOid = $this->makeMerchantOid();
-                $checkoutRef = $this->makeCheckoutRef();
+                    $merchantOid = $this->makeMerchantOid();
+                    $checkoutRef = $this->makeCheckoutRef();
 
-                $order = Order::query()->create([
-                    'tenant_id' => $tenant->id,
-                    'user_id' => $user?->id,
-                    'merchant_oid' => $merchantOid,
-                    'checkout_ref' => $checkoutRef,
-                    'status' => OrderStatus::AwaitingPayment,
-                    'currency' => config('paytr.currency', 'TL'),
-                    'subtotal_cents' => 0,
-                    'shipping_cents' => 0,
-                    'discount_cents' => 0,
-                    'total_cents' => 0,
-                    'customer_name' => $validated['customer']['name'],
-                    'customer_email' => $validated['customer']['email'],
-                    'customer_phone' => $validated['customer']['phone'],
-                    'shipping_city' => $validated['shipping']['city'] ?? null,
-                    'shipping_district' => $validated['shipping']['district'] ?? null,
-                    'shipping_address' => $validated['shipping']['address'],
-                    'metadata' => [
-                        'source' => 'api_checkout',
-                        'cart_token' => $cartToken,
-                        'checkout_key' => $checkoutKey,
-                        'coupon_code' => null,
-                        'stock_reserved' => true,
-                        'stock_released' => false,
-                    ],
-                ]);
+                    $order = Order::query()->create([
+                        'tenant_id'          => $tenant->id,
+                        'user_id'            => $user?->id,
+                        'merchant_oid'       => $merchantOid,
+                        'checkout_ref'       => $checkoutRef,
+                        'status'             => OrderStatus::AwaitingPayment,
+                        'currency'           => config('paytr.currency', 'TL'),
+                        'subtotal_cents'     => 0,
+                        'shipping_cents'     => 0,
+                        'discount_cents'     => 0,
+                        'total_cents'        => 0,
+                        'customer_name'      => $validated['customer']['name'],
+                        'customer_email'     => $validated['customer']['email'],
+                        'customer_phone'     => $validated['customer']['phone'],
+                        'shipping_city'      => $validated['shipping']['city'] ?? null,
+                        'shipping_district'  => $validated['shipping']['district'] ?? null,
+                        'shipping_address'   => $validated['shipping']['address'],
+                        'metadata'           => [
+                            'source'          => 'api_checkout',
+                            'cart_token'      => $cartToken,
+                            'checkout_key'    => $checkoutKey,
+                            'coupon_code'     => null,
+                            'stock_reserved'  => true,
+                            'stock_released'  => false,
+                        ],
+                    ]);
 
-                $subtotal = $this->buildOrderItems($order, $checkoutItems, $products);
-                $resolvedCouponCode = $couponCode !== ''
-                    ? $couponCode
-                    : $this->resolveCartCouponCode($tenant->id, $user, $cartToken);
-                $discountCents = $this->resolveCouponDiscount($subtotal, $resolvedCouponCode, $tenant->id);
-                $totalCents = max(0, $subtotal - $discountCents);
-                $metadata = $order->metadata ?? [];
-                $metadata['coupon_code'] = $resolvedCouponCode !== '' ? $resolvedCouponCode : null;
+                    $subtotal           = $this->buildOrderItems($order, $checkoutItems, $products);
+                    $resolvedCouponCode = $couponCode !== ''
+                        ? $couponCode
+                        : $this->resolveCartCouponCode($tenant->id, $user, $cartToken);
+                    $discountCents      = $this->resolveCouponDiscount($subtotal, $resolvedCouponCode, $tenant->id);
+                    $totalCents         = max(0, $subtotal - $discountCents);
+                    $metadata           = $order->metadata ?? [];
+                    $metadata['coupon_code'] = $resolvedCouponCode !== '' ? $resolvedCouponCode : null;
 
-                $order->update([
-                    'subtotal_cents' => $subtotal,
-                    'discount_cents' => $discountCents,
-                    'total_cents' => $totalCents,
-                    'metadata' => $metadata,
-                ]);
+                    $order->update([
+                        'subtotal_cents' => $subtotal,
+                        'discount_cents' => $discountCents,
+                        'total_cents'    => $totalCents,
+                        'metadata'       => $metadata,
+                    ]);
 
-                $order->payment()->create([
-                    'provider' => 'paytr',
-                    'merchant_oid' => $merchantOid,
-                    'status' => PaymentStatus::Pending,
-                    'amount_cents' => $totalCents,
-                    'currency' => config('paytr.currency', 'TL'),
-                ]);
+                    $order->payment()->create([
+                        'provider'      => 'paytr',
+                        'merchant_oid'  => $merchantOid,
+                        'status'        => PaymentStatus::Pending,
+                        'amount_cents'  => $totalCents,
+                        'currency'      => config('paytr.currency', 'TL'),
+                    ]);
 
-                return $order->load('items', 'payment');
-            });
+                    return $order->load('items', 'payment');
+                });
 
-            try {
-                $iframe = $paytr->getIframeToken($order, $request->ip());
-            } catch (RuntimeException $exception) {
-                $this->releaseReservedStock($order);
+                // ── PayTR iframe token al ───────────────────────
+                try {
+                    $iframe = $paytr->getIframeToken($order, $request->ip());
+                } catch (RuntimeException $exception) {
+                    $this->releaseReservedStock($order);
 
-                $order->payment->update([
-                    'status' => PaymentStatus::Failed,
-                    'failed_reason_msg' => $exception->getMessage(),
-                ]);
+                    $order->payment->update([
+                        'status'            => PaymentStatus::Failed,
+                        'failed_reason_msg' => $exception->getMessage(),
+                    ]);
 
-                return response()->json([
-                    'message' => 'Odeme oturumu baslatilamadi.',
-                    'reason' => $exception->getMessage(),
-                ], 502);
-            }
+                    return response()->json([
+                        'message' => 'Ödeme oturumu başlatılamadı.',
+                        'reason'  => $exception->getMessage(),
+                    ], 502);
+                }
 
-            $order->payment->update(['provider_token' => $iframe['token']]);
-            $payload = $this->serializeCheckoutResponse($order, $iframe['token'], $iframe['iframe_src']);
+                $order->payment->update(['provider_token' => $iframe['token']]);
+                $payload = $this->serializeCheckoutResponse($order, $iframe['token'], $iframe['iframe_src']);
 
                 Cache::put($this->checkoutPayloadCacheKey($tenant->id, $checkoutKey), $payload, now()->addMinutes(15));
 
-                return response()->json([
-                    'data' => $payload,
-                ], 201);
+                return response()->json(['data' => $payload], 201);
             });
         } catch (LockTimeoutException) {
             return response()->json([
-                'message' => 'Checkout istegi hala isleniyor. Lutfen birkac saniye sonra tekrar deneyin.',
+                'message' => 'Checkout isteği hâlâ işleniyor. Lütfen birkaç saniye sonra tekrar deneyin.',
             ], 429);
         }
     }
+
 
     /**
      * @param  Collection<int, array{product_id: int, quantity: int}>  $checkoutItems
