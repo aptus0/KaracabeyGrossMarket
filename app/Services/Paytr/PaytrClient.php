@@ -192,6 +192,17 @@ class PaytrClient
                 ->acceptJson()
                 ->timeout($timeout)
                 ->connectTimeout($timeout)
+                ->retry(2, 250, function ($exception): bool {
+                    if ($exception instanceof ConnectionException) {
+                        return true;
+                    }
+
+                    if ($exception instanceof RequestException) {
+                        return $exception->response?->serverError() ?? false;
+                    }
+
+                    return false;
+                })
                 ->post($url, $payload)
                 ->throw()
                 ->json();

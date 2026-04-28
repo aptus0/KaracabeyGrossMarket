@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\CartCoupon;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Support\CouponSupport;
 use App\Support\TenantResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -22,7 +24,7 @@ class CartController extends Controller
             ->latest()
             ->get();
 
-        return response()->json(['data' => $this->serializeCart($items, $request->user() ? null : $cartToken)]);
+        return response()->json(['data' => $this->serializeCart($items, $request, $tenant->id, $request->user() ? null : $cartToken)]);
     }
 
     public function store(Request $request, TenantResolver $tenants): JsonResponse
@@ -64,7 +66,7 @@ class CartController extends Controller
             ->latest()
             ->get();
 
-        return response()->json(['data' => $this->serializeCart($items, $request->user() ? null : $cartToken)], $item->wasRecentlyCreated ? 201 : 200);
+        return response()->json(['data' => $this->serializeCart($items, $request, $tenant->id, $request->user() ? null : $cartToken)], $item->wasRecentlyCreated ? 201 : 200);
     }
 
     public function update(Request $request, TenantResolver $tenants, CartItem $cartItem): JsonResponse
@@ -88,7 +90,7 @@ class CartController extends Controller
             ->latest()
             ->get();
 
-        return response()->json(['data' => $this->serializeCart($items, $request->user() ? null : $cartToken)]);
+        return response()->json(['data' => $this->serializeCart($items, $request, $tenant->id, $request->user() ? null : $cartToken)]);
     }
 
     public function destroy(Request $request, TenantResolver $tenants, CartItem $cartItem): JsonResponse
@@ -105,7 +107,7 @@ class CartController extends Controller
             ->latest()
             ->get();
 
-        return response()->json(['data' => $this->serializeCart($items, $request->user() ? null : $cartToken)]);
+        return response()->json(['data' => $this->serializeCart($items, $request, $tenant->id, $request->user() ? null : $cartToken)]);
     }
 
     public function clear(Request $request, TenantResolver $tenants): JsonResponse
@@ -114,8 +116,9 @@ class CartController extends Controller
         $cartToken = $this->cartToken($request, create: false);
 
         $this->cartQuery($request, $tenant->id, $cartToken)->delete();
+        $this->cartCouponQuery($request, $tenant->id, $cartToken)->delete();
 
-        return response()->json(['data' => $this->serializeCart(collect(), $request->user() ? null : $cartToken)]);
+        return response()->json(['data' => $this->serializeCart(collect(), $request, $tenant->id, $request->user() ? null : $cartToken)]);
     }
 
     private function cartToken(Request $request, bool $create = true): ?string
@@ -157,9 +160,10 @@ class CartController extends Controller
         return $cartToken && hash_equals((string) $cartItem->cart_token, $cartToken);
     }
 
-    private function serializeCart($items, ?string $cartToken): array
+    private function serializeCart($items, Request $request, int $tenantId, ?string $cartToken): array
     {
         $subtotal = $items->sum(fn (CartItem $item): int => $item->product->price_cents * $item->quantity);
+        [$appliedCoupon, $discountCents] = $this->resolveAppliedCoupon($request, $tenantId, $cartToken, $subtotal);
 
         return [
             'cart_token' => $cartToken,
@@ -178,8 +182,58 @@ class CartController extends Controller
                     'image_url' => $item->product->image_url,
                 ],
             ])->values(),
+            'applied_coupon' => $appliedCoupon,
             'subtotal_cents' => $subtotal,
-            'total_cents' => $subtotal,
+            'total_cents' => max(0, $subtotal - $discountCents),
         ];
+    }
+
+    private function cartCouponQuery(Request $request, int $tenantId, ?string $cartToken): Builder
+    {
+        return CartCoupon::query()
+            ->where('tenant_id', $tenantId)
+            ->when(
+                $request->user(),
+                fn (Builder $query) => $query->where('user_id', $request->user()->id),
+                fn (Builder $query) => $query->where('cart_token', $cartToken)
+            );
+    }
+
+    /**
+     * @return array{0: array<string, int|string>|null, 1: int}
+     */
+    private function resolveAppliedCoupon(Request $request, int $tenantId, ?string $cartToken, int $subtotal): array
+    {
+        $cartCoupon = $this->cartCouponQuery($request, $tenantId, $cartToken)
+            ->with('coupon')
+            ->first();
+
+        if (! $cartCoupon) {
+            return [null, 0];
+        }
+
+        if ($subtotal <= 0 || ! $cartCoupon->coupon) {
+            $cartCoupon->delete();
+
+            return [null, 0];
+        }
+
+        $support = $this->couponSupport();
+        $coupon = $cartCoupon->coupon;
+
+        if ($support->invalidReason($coupon, $subtotal) !== null) {
+            $cartCoupon->delete();
+
+            return [null, 0];
+        }
+
+        $appliedCoupon = $support->serialize($coupon, $subtotal);
+
+        return [$appliedCoupon, $appliedCoupon['discount_cents']];
+    }
+
+    private function couponSupport(): CouponSupport
+    {
+        return app(CouponSupport::class);
     }
 }

@@ -1,31 +1,22 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ChevronDown, Loader2, Tag, X } from "lucide-react";
 import { Button } from "@/app/_components/ui/button";
 import { Input } from "@/app/_components/ui/input";
-import { apiRequest } from "@/lib/api";
-import { formatCartMoney } from "@/lib/cart";
+import { formatCartMoney, type AppliedCoupon } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 
-export type CouponData = {
-  code: string;
-  discount_type: "fixed" | "percent";
-  discount_value: number;
-  discount_cents: number;
-  total_cents: number;
-};
+export type CouponData = AppliedCoupon;
 
 type CouponInputProps = {
-  subtotalCents: number;
   appliedCoupon: CouponData | null;
-  onApply: (coupon: CouponData) => void;
-  onRemove: () => void;
+  onApply: (code: string) => Promise<unknown> | void;
+  onRemove: () => Promise<unknown> | void;
   disabled?: boolean;
 };
 
 export function CouponInput({
-  subtotalCents,
   appliedCoupon,
   onApply,
   onRemove,
@@ -36,6 +27,12 @@ export function CouponInput({
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setCode(appliedCoupon?.code ?? "");
+    setOpen(Boolean(appliedCoupon));
+    setError(null);
+  }, [appliedCoupon]);
 
   function handleToggle() {
     setOpen((prev) => {
@@ -61,11 +58,7 @@ export function CouponInput({
     setError(null);
 
     try {
-      const data = await apiRequest<CouponData>("/api/v1/cart/coupon", {
-        method: "POST",
-        body: JSON.stringify({ code: trimmed, subtotal_cents: subtotalCents }),
-      });
-      onApply(data);
+      await onApply(trimmed);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Kupon uygulanamadı.");
     } finally {

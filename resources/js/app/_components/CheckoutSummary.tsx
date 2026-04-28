@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
-import { CouponInput, type CouponData } from "@/app/_components/CouponInput";
+import { CouponInput } from "@/app/_components/CouponInput";
 import { Button } from "@/app/_components/ui/button";
 import { formatCartMoney, type CartLineItem } from "@/lib/cart";
 import { useCartStore } from "@/lib/cart-store";
@@ -14,9 +14,6 @@ type CheckoutSummaryProps = {
   description?: string;
   editable?: boolean;
   className?: string;
-  coupon?: CouponData | null;
-  onCouponApply?: (coupon: CouponData) => void;
-  onCouponRemove?: () => void;
 };
 
 export function CheckoutSummary({
@@ -25,25 +22,33 @@ export function CheckoutSummary({
   description = "Sepetinizdeki ürünler canlı olarak güncellenir.",
   editable = false,
   className,
-  coupon,
-  onCouponApply,
-  onCouponRemove,
 }: CheckoutSummaryProps) {
   const storeItems = useCartStore((state) => state.items);
+  const appliedCoupon = useCartStore((state) => state.applied_coupon);
   const subtotal = useCartStore((state) => state.subtotal_cents);
   const total = useCartStore((state) => state.total_cents);
   const status = useCartStore((state) => state.status);
+  const error = useCartStore((state) => state.error);
   const updateItemQuantity = useCartStore((state) => state.updateItemQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
+  const applyCoupon = useCartStore((state) => state.applyCoupon);
+  const clearCoupon = useCartStore((state) => state.removeCoupon);
 
   const resolvedItems = items ?? storeItems;
+  const resolvedCoupon = items ? null : appliedCoupon;
   const resolvedSubtotal = items
     ? items.reduce((sum, item) => sum + item.line_total_cents, 0)
     : subtotal;
-  const discountCents = coupon?.discount_cents ?? 0;
-  const resolvedTotal = coupon
-    ? Math.max(0, resolvedSubtotal - discountCents)
-    : (items ? resolvedSubtotal : total);
+  const discountCents = resolvedCoupon?.discount_cents ?? 0;
+  const resolvedTotal = items ? resolvedSubtotal : total;
+
+  async function handleQuantityChange(itemId: number, quantity: number) {
+    await updateItemQuantity(itemId, quantity).catch(() => undefined);
+  }
+
+  async function handleItemRemoval(itemId: number) {
+    await removeItem(itemId).catch(() => undefined);
+  }
 
   if (resolvedItems.length === 0) {
     return (
@@ -120,7 +125,7 @@ export function CheckoutSummary({
                       <button
                         type="button"
                         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E4E7EB] bg-white text-[#2B2F36] transition hover:bg-[#FFF8F0]"
-                        onClick={() => updateItemQuantity(item.id, Math.max(1, item.quantity - 1))}
+                        onClick={() => void handleQuantityChange(item.id, Math.max(1, item.quantity - 1))}
                         disabled={status === "updating" || item.quantity <= 1}
                         aria-label={`${item.product.name} miktarını azalt`}
                       >
@@ -132,7 +137,7 @@ export function CheckoutSummary({
                       <button
                         type="button"
                         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E4E7EB] bg-white text-[#2B2F36] transition hover:bg-[#FFF8F0]"
-                        onClick={() => updateItemQuantity(item.id, Math.min(99, item.quantity + 1))}
+                        onClick={() => void handleQuantityChange(item.id, Math.min(99, item.quantity + 1))}
                         disabled={status === "updating" || item.quantity >= 99}
                         aria-label={`${item.product.name} miktarını arttır`}
                       >
@@ -141,7 +146,7 @@ export function CheckoutSummary({
                       <button
                         type="button"
                         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#F3D4CF] bg-white text-[#A32A18] transition hover:bg-[#FFF3F1]"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => void handleItemRemoval(item.id)}
                         disabled={status === "updating"}
                         aria-label={`${item.product.name} ürününü sil`}
                       >
@@ -156,16 +161,21 @@ export function CheckoutSummary({
         ))}
       </ul>
 
-      {onCouponApply ? (
+      {editable && !items ? (
         <div className="mt-4 border-t border-[#EEF1F4] pt-4">
           <CouponInput
-            subtotalCents={resolvedSubtotal}
-            appliedCoupon={coupon ?? null}
-            onApply={onCouponApply}
-            onRemove={onCouponRemove ?? (() => undefined)}
+            appliedCoupon={resolvedCoupon}
+            onApply={applyCoupon}
+            onRemove={clearCoupon}
             disabled={status === "updating"}
           />
         </div>
+      ) : null}
+
+      {error ? (
+        <p className="mt-4 rounded-2xl border border-[#F3D4CF] bg-[#FFF5F3] px-4 py-3 text-sm font-semibold text-[#A32A18]">
+          {error}
+        </p>
       ) : null}
 
       <div className="mt-4 grid gap-3 rounded-2xl border border-[#EEF1F4] bg-[#FAFBFC] p-4">
@@ -177,7 +187,7 @@ export function CheckoutSummary({
           <div className="flex items-center justify-between text-sm">
             <span className="text-[#16A34A]">
               İndirim
-              {coupon ? ` (${coupon.code})` : ""}
+              {resolvedCoupon ? ` (${resolvedCoupon.code})` : ""}
             </span>
             <strong className="font-black text-[#16A34A]">
               -{formatCartMoney(discountCents)}

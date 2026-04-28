@@ -24,6 +24,8 @@ import { SearchBar } from "@/app/_components/SearchBar";
 import { useAuthStore } from "@/lib/auth-store";
 import { cartItemCount } from "@/lib/cart";
 import { useCartStore } from "@/lib/cart-store";
+import { apiRequest } from "@/lib/api";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   defaultNavigation,
   fetchNavigation,
@@ -43,6 +45,9 @@ type HeaderProps = {
 export function Header({ compact = false }: HeaderProps) {
   const [navigation, setNavigation] = useState<NavigationData>(defaultNavigation);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [announcementText, setAnnouncementText] = useState("Karacabey Gross Market için güvenli ödeme, canlı stok ve düzenli teslimat operasyonu.");
+  const [isCartAnimating, setIsCartAnimating] = useState(false);
+  const prevCartCount = useRef(0);
   const cartCount = useCartStore((state) => cartItemCount(state.items));
   const isCartOpen = useCartStore((state) => state.isSheetOpen);
   const openCartSheet = useCartStore((state) => state.openSheet);
@@ -57,8 +62,28 @@ export function Header({ compact = false }: HeaderProps) {
       .then(setNavigation)
       .catch(() => setNavigation(defaultNavigation));
 
+    apiRequest<{ data: { announcement_text: string } }>("/api/v1/content/marketing", { signal: controller.signal })
+      .then((res) => {
+        if (res.data?.announcement_text) {
+          setAnnouncementText(res.data.announcement_text);
+        }
+      })
+      .catch(() => {
+        // Sessizce hatayı yoksay
+      });
+
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    if (cartCount > prevCartCount.current) {
+      setIsCartAnimating(true);
+      const timer = setTimeout(() => setIsCartAnimating(false), 300);
+      prevCartCount.current = cartCount;
+      return () => clearTimeout(timer);
+    }
+    prevCartCount.current = cartCount;
+  }, [cartCount]);
 
   useEffect(() => {
     document.body.classList.toggle("drawer-open", menuOpen);
@@ -91,7 +116,7 @@ export function Header({ compact = false }: HeaderProps) {
       <div className="site-header__announcement">
         <div className="site-header__announcement-inner">
           <span className="site-header__announcement-copy">
-            Karacabey Gross Market için güvenli ödeme, canlı stok ve düzenli teslimat operasyonu.
+            {announcementText}
           </span>
 
           {!compact ? (
@@ -132,14 +157,20 @@ export function Header({ compact = false }: HeaderProps) {
 
           <button
             type="button"
-            className="header-action header-action--cart"
+            className="header-action header-action--cart relative"
             aria-label="Sepet"
             aria-expanded={isCartOpen ? "true" : "false"}
             aria-haspopup="dialog"
             onClick={openCartSheet}
           >
             <ShoppingCart size={20} />
-            <small>{cartCount}</small>
+            <motion.small
+              animate={isCartAnimating ? { scale: [1, 1.5, 1], backgroundColor: ["#ff0000", "#FF7A00", "#FF7A00"] } : {}}
+              transition={{ duration: 0.3 }}
+              className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF7A00] text-[10px] font-bold text-white"
+            >
+              {cartCount}
+            </motion.small>
           </button>
 
           <HeaderAccountLink isAuthenticated={isAuthenticated} userName={firstName} />

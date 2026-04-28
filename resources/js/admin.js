@@ -98,7 +98,7 @@ function drawAxes(context, labels, width, height, bounds, colors) {
 
         context.textAlign = 'right';
         context.textBaseline = 'middle';
-        context.fillText(Math.round(value).toString(), bounds.left - 10, y);
+        context.fillText(formatAxisValue(value), bounds.left - 10, y);
     }
 
     labels.forEach((label, index) => {
@@ -134,10 +134,10 @@ function drawLineChart(canvas, labels, values) {
         max: Math.max(...values, 1),
     };
     const colors = {
-        line: '#fafafa',
-        fill: 'rgba(250, 250, 250, 0.16)',
-        grid: 'rgba(255, 255, 255, 0.08)',
-        textMuted: 'rgba(250, 250, 250, 0.6)',
+        line: '#f97316',
+        fill: 'rgba(249, 115, 22, 0.16)',
+        grid: 'rgba(148, 163, 184, 0.18)',
+        textMuted: '#94a3b8',
     };
 
     drawAxes(context, labels, width, height, bounds, colors);
@@ -173,7 +173,7 @@ function drawLineChart(canvas, labels, values) {
         const y = bounds.top + bounds.chartHeight - (value / bounds.max) * bounds.chartHeight;
 
         context.beginPath();
-        context.fillStyle = '#fafafa';
+        context.fillStyle = '#f97316';
         context.arc(x, y, 3.5, 0, Math.PI * 2);
         context.fill();
     });
@@ -203,9 +203,9 @@ function drawBarChart(canvas, labels, values) {
         max: Math.max(...values, 1),
     };
     const colors = {
-        bar: '#fafafa',
-        grid: 'rgba(255, 255, 255, 0.08)',
-        textMuted: 'rgba(250, 250, 250, 0.6)',
+        bar: '#fb923c',
+        grid: 'rgba(148, 163, 184, 0.18)',
+        textMuted: '#94a3b8',
     };
 
     drawAxes(context, labels, width, height, bounds, colors);
@@ -240,7 +240,7 @@ function setupDashboardCharts() {
 
     const labels = Array.isArray(chartData.labels) ? chartData.labels : [];
     const earnings = Array.isArray(chartData.earnings) ? chartData.earnings.map(Number) : [];
-    const orders = Array.isArray(chartData.orders) ? chartData.orders.map(Number) : [];
+    const orders = Array.isArray(chartData.units ?? chartData.orders) ? (chartData.units ?? chartData.orders).map(Number) : [];
 
     const render = () => {
         drawLineChart(earningsCanvas, labels, earnings);
@@ -251,6 +251,18 @@ function setupDashboardCharts() {
 
     render();
     window.addEventListener('resize', debouncedRender);
+}
+
+function formatAxisValue(value) {
+    if (value >= 1000000) {
+        return `${(value / 1000000).toFixed(1)}M`;
+    }
+
+    if (value >= 1000) {
+        return `${(value / 1000).toFixed(1)}K`;
+    }
+
+    return Math.round(value).toString();
 }
 
 function debounce(callback, wait) {

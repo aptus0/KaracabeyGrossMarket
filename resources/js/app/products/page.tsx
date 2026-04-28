@@ -24,16 +24,26 @@ export const metadata: Metadata = buildMetadata({
 type ProductsPageProps = {
   searchParams: Promise<{
     category?: string;
+    page?: string;
     q?: string;
   }>;
 };
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const params = await searchParams;
+  const currentPage = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
 
-  const [{ products: selectedProducts, total }, categories] = await Promise.all([
+  const [{
+    products: selectedProducts,
+    total,
+    currentPage: resolvedPage,
+    lastPage,
+    from,
+    to,
+  }, categories] = await Promise.all([
     fetchStorefrontProducts({
       category: params.category,
+      page: currentPage,
       query: params.q,
       perPage: 48,
     }),
@@ -41,6 +51,32 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   ]);
 
   const activeCategory = categories.find((c) => c.slug === params.category);
+  const pageWindowStart = Math.max(1, resolvedPage - 2);
+  const pageWindowEnd = Math.min(lastPage, resolvedPage + 2);
+  const visiblePages = Array.from(
+    { length: Math.max(pageWindowEnd - pageWindowStart + 1, 0) },
+    (_, index) => pageWindowStart + index,
+  );
+
+  const buildProductsHref = (page: number) => {
+    const nextParams = new URLSearchParams();
+
+    if (params.category) {
+      nextParams.set("category", params.category);
+    }
+
+    if (params.q) {
+      nextParams.set("q", params.q);
+    }
+
+    if (page > 1) {
+      nextParams.set("page", String(page));
+    }
+
+    const queryString = nextParams.toString();
+
+    return queryString ? `/products?${queryString}` : "/products";
+  };
 
   const itemListSchema = {
     "@context": "https://schema.org",
@@ -110,7 +146,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         <div className="catalog-toolbar">
           <span className="catalog-toolbar__count">
             <SlidersHorizontal size={15} />
-            {total} ürün
+            {from > 0 && to > 0 ? `${from}-${to} / ${total}` : total} ürün
           </span>
           <div className="catalog-toolbar__actions">
             {params.category && (
@@ -134,6 +170,54 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           </div>
         ) : (
           <ProductGrid products={selectedProducts} />
+        )}
+
+        {lastPage > 1 && (
+          <nav className="catalog-pagination" aria-label="Ürün sayfalama">
+            <Link
+              href={buildProductsHref(Math.max(resolvedPage - 1, 1))}
+              aria-disabled={resolvedPage <= 1}
+              className={`catalog-chip${resolvedPage <= 1 ? " catalog-chip--disabled" : ""}`}
+            >
+              Önceki
+            </Link>
+
+            {pageWindowStart > 1 && (
+              <>
+                <Link href={buildProductsHref(1)} className="catalog-chip">
+                  1
+                </Link>
+                {pageWindowStart > 2 && <span className="catalog-pagination__ellipsis">…</span>}
+              </>
+            )}
+
+            {visiblePages.map((page) => (
+              <Link
+                key={page}
+                href={buildProductsHref(page)}
+                className={`catalog-chip${page === resolvedPage ? " catalog-chip--active" : ""}`}
+              >
+                {page}
+              </Link>
+            ))}
+
+            {pageWindowEnd < lastPage && (
+              <>
+                {pageWindowEnd < lastPage - 1 && <span className="catalog-pagination__ellipsis">…</span>}
+                <Link href={buildProductsHref(lastPage)} className="catalog-chip">
+                  {lastPage}
+                </Link>
+              </>
+            )}
+
+            <Link
+              href={buildProductsHref(Math.min(resolvedPage + 1, lastPage))}
+              aria-disabled={resolvedPage >= lastPage}
+              className={`catalog-chip${resolvedPage >= lastPage ? " catalog-chip--disabled" : ""}`}
+            >
+              Sonraki
+            </Link>
+          </nav>
         )}
 
       </main>

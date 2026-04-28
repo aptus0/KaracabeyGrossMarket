@@ -1,3 +1,5 @@
+import { buildApiUrl } from "@/lib/api";
+
 export type NavigationItem = {
   id?: number;
   label: string;
@@ -57,10 +59,8 @@ type NavigationResponse = {
   data?: Partial<NavigationData>;
 };
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-
 export async function fetchNavigation(signal?: AbortSignal): Promise<NavigationData> {
-  const response = await fetch(`${apiBaseUrl}/api/v1/content/navigation`, {
+  const response = await fetch(buildApiUrl("/api/v1/content/navigation"), {
     headers: {
       Accept: "application/json",
     },

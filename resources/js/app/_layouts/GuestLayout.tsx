@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 import { BottomNavigation } from "@/app/_components/BottomNavigation";
 import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
@@ -14,7 +15,9 @@ export function GuestLayout({ children }: GuestLayoutProps) {
       {/* Desktop header — hidden on mobile via CSS */}
       <Header />
       {/* Mobile header — visible only on mobile via CSS */}
-      <MobileHeader />
+      <Suspense fallback={null}>
+        <MobileHeader />
+      </Suspense>
       {children}
       <Footer />
       <BottomNavigation />

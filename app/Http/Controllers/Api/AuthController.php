@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ApiToken;
+use App\Models\CartCoupon;
 use App\Models\CartItem;
 use App\Models\User;
 use App\Services\Auth\ApiTokenIssuer;
@@ -242,6 +243,33 @@ class AuthController extends Controller
             ]);
 
             $items->slice(1)->each->delete();
+        }
+
+        $this->claimGuestCartCoupon($cartToken, $user);
+    }
+
+    private function claimGuestCartCoupon(string $cartToken, User $user): void
+    {
+        $guestCoupons = CartCoupon::query()
+            ->where('cart_token', $cartToken)
+            ->get();
+
+        foreach ($guestCoupons as $guestCoupon) {
+            $existing = CartCoupon::query()
+                ->where('tenant_id', $guestCoupon->tenant_id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if ($existing) {
+                $guestCoupon->delete();
+
+                continue;
+            }
+
+            $guestCoupon->update([
+                'user_id' => $user->id,
+                'cart_token' => null,
+            ]);
         }
     }
 }

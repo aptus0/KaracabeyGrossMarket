@@ -63,6 +63,11 @@ class Order extends Model
         return $this->hasOne(Payment::class);
     }
 
+    public function shipment(): HasOne
+    {
+        return $this->hasOne(Shipment::class);
+    }
+
     /**
      * @return array<int, array{0: string, 1: string, 2: int}>
      */

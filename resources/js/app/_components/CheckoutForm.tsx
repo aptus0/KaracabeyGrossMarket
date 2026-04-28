@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/app/_components/ui/button";
@@ -44,6 +44,7 @@ type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 export function CheckoutForm({ items, cartToken, couponCode, disabled = false }: CheckoutFormProps) {
   const token = useAuthStore((state) => state.token);
   const [error, setError] = useState<string | null>(null);
+  const checkoutKeyRef = useRef(createCheckoutKey());
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
@@ -61,11 +62,13 @@ export function CheckoutForm({ items, cartToken, couponCode, disabled = false }:
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...(!token && cartToken ? { "X-Cart-Token": cartToken } : {}),
+          "X-Checkout-Key": checkoutKeyRef.current,
         },
         body: JSON.stringify({
           ...values,
           cart_token: !token ? cartToken ?? undefined : undefined,
           coupon_code: couponCode ?? undefined,
+          checkout_key: checkoutKeyRef.current,
           items: items.map((item) => ({
             product_id: item.productId,
             quantity: item.quantity,
@@ -126,4 +129,12 @@ export function CheckoutForm({ items, cartToken, couponCode, disabled = false }:
       </Button>
     </form>
   );
+}
+
+function createCheckoutKey() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `checkout-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }

@@ -3,12 +3,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
+import { CouponCopyButton } from "@/app/_components/CouponCopyButton";
 import { SeoHead } from "@/app/_components/SeoHead";
-import { siteUrl } from "@/lib/seo";
+import { buildMetadata, siteUrl } from "@/lib/seo";
 import {
   Tag,
   Clock,
-  Copy,
   ChevronRight,
   ArrowLeft,
   Zap,
@@ -93,28 +93,14 @@ export async function generateMetadata({
     campaign.description ??
     `${campaign.name} — Karacabey Gross Market kampanyası.`;
   const image = campaign.meta_image_url ?? campaign.banner_image_url;
-  const url = `${siteUrl}/kampanyalar/${campaign.slug}`;
 
-  return {
-    title: `${title} | Karacabey Gross Market`,
+  return buildMetadata({
+    title,
     description,
-    alternates: { canonical: `/kampanyalar/${campaign.slug}` },
-    openGraph: {
-      title,
-      description,
-      url,
-      siteName: "Karacabey Gross Market",
-      locale: "tr_TR",
-      type: "article",
-      ...(image ? { images: [{ url: image, alt: title }] } : {}),
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      ...(image ? { images: [image] } : {}),
-    },
-  };
+    path: `/kampanyalar/${campaign.slug}`,
+    image: image ?? undefined,
+    type: "article",
+  });
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -366,17 +352,7 @@ function CouponBox({ coupon }: { coupon: Coupon }) {
           {coupon.ends_at && ` · ${formatDate(coupon.ends_at)}'e kadar`}
         </p>
       </div>
-      <button
-        type="button"
-        className="coupon-copy-btn inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#FF7A00] text-white transition hover:bg-[#E06500]"
-        data-code={coupon.code}
-        aria-label="Kodu kopyala"
-        onClick={() => {
-          void navigator.clipboard.writeText(coupon.code);
-        }}
-      >
-        <Copy size={14} />
-      </button>
+      <CouponCopyButton code={coupon.code} />
     </div>
   );
 }

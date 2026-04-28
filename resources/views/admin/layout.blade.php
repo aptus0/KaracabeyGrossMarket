@@ -6,6 +6,7 @@
     <meta name="robots" content="noindex,nofollow">
     <title>@yield('title', 'Yönetim Paneli') | Karacabey Gross Market</title>
     <style nonce="{{ request()->attributes->get('csp_nonce') }}">
+        
         /* shadcn/ui Renk Paleti ve Değişkenleri */
         :root { 
             --background: #f8fafc; /* Açık gri ana arka plan */

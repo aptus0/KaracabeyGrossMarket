@@ -8,24 +8,29 @@ use App\Models\Product;
 use App\Support\TenantResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends Controller
 {
     public function index(Request $request, TenantResolver $tenants): JsonResponse
     {
         $tenant = $tenants->resolve($request);
-
-        $categories = Category::query()
-            ->whereBelongsTo($tenant)
-            ->where('is_active', true)
-            ->whereNull('parent_id')
-            ->with(['children' => fn ($query) => $query->where('is_active', true)])
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
+        $categories = Cache::remember("tenant:{$tenant->id}:categories:index:v1", now()->addMinutes(5), function () use ($tenant): array {
+            return Category::query()
+                ->whereBelongsTo($tenant)
+                ->where('is_active', true)
+                ->whereNull('parent_id')
+                ->with(['children' => fn ($query) => $query->where('is_active', true)])
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get()
+                ->map(fn (Category $category): array => $this->serialize($category, includeChildren: true))
+                ->values()
+                ->all();
+        });
 
         return response()->json([
-            'data' => $categories->map(fn (Category $category): array => $this->serialize($category, includeChildren: true))->values(),
+            'data' => $categories,
         ]);
     }
 

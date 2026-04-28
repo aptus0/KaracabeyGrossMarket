@@ -1,7 +1,9 @@
 <?php
 
 use App\Data\Auth\SocialUserData;
+use App\Models\CartCoupon;
 use App\Models\CartItem;
+use App\Models\Coupon;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\User;
@@ -35,7 +37,10 @@ it('reports social providers as disabled when credentials are missing', function
 
 it('claims a guest cart on credential login', function (): void {
     $tenant = authTenant();
-    $user = User::factory()->create(['email' => 'customer@example.com']);
+    $user = User::factory()->create([
+        'email' => 'customer@example.com',
+        'phone' => '5551112233',
+    ]);
     $product = Product::query()->create([
         'tenant_id' => $tenant->id,
         'name' => 'Gunluk Sut 1 L',
@@ -50,17 +55,32 @@ it('claims a guest cart on credential login', function (): void {
         'product_id' => $product->id,
         'quantity' => 2,
     ]);
+    $coupon = Coupon::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'LOGIN25',
+        'discount_type' => 'fixed',
+        'discount_value' => 2500,
+        'minimum_order_cents' => 0,
+        'is_active' => true,
+    ]);
+    CartCoupon::query()->create([
+        'tenant_id' => $tenant->id,
+        'cart_token' => 'guest-cart-token',
+        'coupon_id' => $coupon->id,
+    ]);
 
     $this->postJson('/api/v1/auth/login', [
-        'email' => 'customer@example.com',
+        'phone' => '5551112233',
         'password' => 'password',
         'device_name' => 'feature-test',
         'cart_token' => 'guest-cart-token',
     ])
         ->assertOk()
-        ->assertJsonPath('data.user.email', 'customer@example.com');
+        ->assertJsonPath('user.email', 'customer@example.com');
 
     expect(CartItem::query()->where('cart_token', 'guest-cart-token')->count())->toBe(0)
+        ->and(CartCoupon::query()->where('cart_token', 'guest-cart-token')->count())->toBe(0)
+        ->and(CartCoupon::query()->where('user_id', $user->id)->first()?->coupon_id)->toBe($coupon->id)
         ->and(CartItem::query()->where('user_id', $user->id)->first()?->quantity)->toBe(2);
 });
 
@@ -98,7 +118,7 @@ it('links a matching email during social callback and issues an api token', func
     parse_str((string) $hash, $params);
 
     expect($location)->toContain('/auth/callback#')
-        ->and($params['token'] ?? null)->toBeString()
+        ->and($params['token']['token'] ?? null)->toBeString()
         ->and($params['provider'] ?? null)->toBe('google');
 
     $user->refresh();
@@ -107,7 +127,7 @@ it('links a matching email during social callback and issues an api token', func
         ->and($user->avatar_url)->toBe('https://example.com/avatar.png')
         ->and($user->apiTokens()->count())->toBe(1);
 
-    $this->withToken($params['token'])
+    $this->withToken($params['token']['token'])
         ->getJson('/api/v1/auth/me')
         ->assertOk()
         ->assertJsonPath('data.email', 'customer@example.com');

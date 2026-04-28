@@ -17,17 +17,27 @@ class SecurityHeaders
         /** @var Response $response */
         $response = $next($request);
 
+        $scriptSources = ["'self'", "'nonce-{$nonce}'", 'https://www.paytr.com'];
+        $styleSources = ["'self'", "'nonce-{$nonce}'"];
+        $connectSources = ["'self'", 'https://www.paytr.com', 'https://*.paytr.com'];
+
+        foreach ($this->viteDevelopmentSources() as $source) {
+            $scriptSources[] = $source;
+            $styleSources[] = $source;
+            $connectSources[] = $source;
+        }
+
         $directives = [
             "default-src 'self'",
             "base-uri 'self'",
             "object-src 'none'",
             "frame-src 'self' https://www.paytr.com https://*.paytr.com",
             "frame-ancestors 'self' https://karacabeygrossmarket.com https://www.karacabeygrossmarket.com https://app.karacabeygrossmarket.com",
-            "script-src 'self' 'nonce-{$nonce}' https://www.paytr.com",
-            "style-src 'self' 'nonce-{$nonce}'",
+            'script-src ' . implode(' ', array_unique($scriptSources)),
+            'style-src ' . implode(' ', array_unique($styleSources)),
             "img-src 'self' data: https:",
             "font-src 'self' data:",
-            "connect-src 'self' https://www.paytr.com https://*.paytr.com",
+            'connect-src ' . implode(' ', array_unique($connectSources)),
             "form-action 'self' https://www.paytr.com",
         ];
 
@@ -43,5 +53,69 @@ class SecurityHeaders
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self), payment=(self "https://www.paytr.com")');
 
         return $response;
+    }
+
+    /**
+     * Allow Vite's dev server only while a hot file is present in local development.
+     *
+     * @return array<int, string>
+     */
+    protected function viteDevelopmentSources(): array
+    {
+        if (! app()->isLocal()) {
+            return [];
+        }
+
+        $hotFile = public_path('hot');
+
+        if (! is_file($hotFile)) {
+            return [];
+        }
+
+        $hotUrl = trim((string) file_get_contents($hotFile));
+        $origin = $this->normalizeOrigin($hotUrl);
+
+        if ($origin === null) {
+            return [];
+        }
+
+        $sources = [$origin];
+        $websocketOrigin = $this->toWebsocketOrigin($origin);
+
+        if ($websocketOrigin !== null) {
+            $sources[] = $websocketOrigin;
+        }
+
+        return $sources;
+    }
+
+    protected function normalizeOrigin(string $url): ?string
+    {
+        $parts = parse_url($url);
+
+        if (! is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return null;
+        }
+
+        $origin = "{$parts['scheme']}://{$parts['host']}";
+
+        if (! empty($parts['port'])) {
+            $origin .= ":{$parts['port']}";
+        }
+
+        return $origin;
+    }
+
+    protected function toWebsocketOrigin(string $origin): ?string
+    {
+        if (str_starts_with($origin, 'https://')) {
+            return 'wss://' . substr($origin, 8);
+        }
+
+        if (str_starts_with($origin, 'http://')) {
+            return 'ws://' . substr($origin, 7);
+        }
+
+        return null;
     }
 }

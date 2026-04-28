@@ -1,3 +1,5 @@
+import { buildApiUrl } from "@/lib/api";
+
 export type HomepageBlock = {
   id: number;
   type: string;
@@ -35,10 +37,8 @@ export const fallbackSlides: HomepageBlock[] = [
   },
 ];
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-
 export async function fetchHomepageBlocks(signal?: AbortSignal): Promise<HomepageBlock[]> {
-  const response = await fetch(`${apiBaseUrl}/api/v1/content/homepage`, {
+  const response = await fetch(buildApiUrl("/api/v1/content/homepage"), {
     headers: {
       Accept: "application/json",
     },

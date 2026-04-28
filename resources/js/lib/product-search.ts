@@ -1,4 +1,5 @@
 import { liteClient as algoliasearch } from "algoliasearch/lite";
+import { buildApiUrl } from "@/lib/api";
 import { formatPrice, products } from "@/lib/catalog";
 
 export type ProductSuggestion = {
@@ -26,7 +27,6 @@ type AlgoliaProductHit = {
   category?: string | null;
 };
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 const algoliaAppId = process.env.NEXT_PUBLIC_ALGOLIA_APP_ID;
 const algoliaSearchKey = process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_KEY;
 const algoliaProductsIndex = process.env.NEXT_PUBLIC_ALGOLIA_PRODUCTS_INDEX;
@@ -43,7 +43,7 @@ export async function fetchProductSuggestions(query: string, signal?: AbortSigna
   }
 
   const params = new URLSearchParams({ q: normalizedQuery });
-  const response = await fetch(`${apiBaseUrl}/api/v1/products/suggest?${params.toString()}`, {
+  const response = await fetch(buildApiUrl(`/api/v1/products/suggest?${params.toString()}`), {
     headers: {
       Accept: "application/json",
     },

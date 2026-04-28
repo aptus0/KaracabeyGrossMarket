@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Paytr;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\CartCoupon;
 use App\Models\CartItem;
 use App\Models\Payment;
 use App\Models\PaymentEvent;
@@ -156,10 +157,19 @@ class CallbackController extends Controller
 
         if ($order->user_id) {
             $order->user?->cartItems()->delete();
+            CartCoupon::query()
+                ->where('tenant_id', $order->tenant_id)
+                ->where('user_id', $order->user_id)
+                ->delete();
         }
 
         if (! empty($metadata['cart_token'])) {
             CartItem::query()
+                ->where('tenant_id', $order->tenant_id)
+                ->where('cart_token', $metadata['cart_token'])
+                ->delete();
+
+            CartCoupon::query()
                 ->where('tenant_id', $order->tenant_id)
                 ->where('cart_token', $metadata['cart_token'])
                 ->delete();

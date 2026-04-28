@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Grid3X3,
+  Home,
   ShoppingCart,
   User,
 } from "lucide-react";
@@ -12,11 +13,16 @@ import { useCartStore } from "@/lib/cart-store";
 
 const bottomNavItems = [
   {
+    href: "/",
+    label: "Ana Sayfa",
+    icon: Home,
+    match: (pathname: string) => pathname === "/",
+  },
+  {
     href: "/products",
     label: "Ürünler",
     icon: Grid3X3,
     match: (pathname: string) =>
-      pathname === "/" ||
       pathname.startsWith("/products") ||
       pathname.startsWith("/product"),
   },
@@ -42,6 +48,7 @@ const bottomNavItems = [
 export function BottomNavigation() {
   const pathname = usePathname();
   const cartCount = useCartStore((state) => cartItemCount(state.items));
+  const cartTotal = useCartStore((state) => state.total_cents);
   const isCartOpen = useCartStore((state) => state.isSheetOpen);
   const openCartSheet = useCartStore((state) => state.openSheet);
 
@@ -71,6 +78,12 @@ export function BottomNavigation() {
             >
               <Icon size={18} />
               <span>{item.label}</span>
+              {cartTotal > 0 ? (
+                <em className="bottom-nav__meta">{new Intl.NumberFormat("tr-TR", {
+                  notation: "compact",
+                  maximumFractionDigits: 1,
+                }).format(cartTotal / 100)}</em>
+              ) : null}
               {cartCount > 0 ? (
                 <small className="bottom-nav__badge">{cartCount}</small>
               ) : null}

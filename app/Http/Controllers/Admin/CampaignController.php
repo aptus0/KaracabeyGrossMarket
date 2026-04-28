@@ -9,6 +9,7 @@ use App\Support\TenantResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CampaignController extends Controller
@@ -16,7 +17,7 @@ class CampaignController extends Controller
     public function index(): View
     {
         return view('admin.campaigns.index', [
-            'campaigns' => Campaign::query()->with('coupons')->orderBy('sort_order')->latest()->paginate(20),
+            'campaigns' => Campaign::query()->with('coupons')->withCount('coupons')->orderBy('sort_order')->latest()->paginate(20),
             'coupons'   => Coupon::query()->with('campaign')->latest()->paginate(20),
         ]);
     }
@@ -115,7 +116,7 @@ class CampaignController extends Controller
         $tenant   = $tenants->resolve($request);
         $validated = $request->validate([
             'campaign_id'          => ['nullable', 'exists:campaigns,id'],
-            'code'                 => ['required', 'alpha_dash', 'max:64'],
+            'code'                 => ['required', 'alpha_dash', 'max:64', Rule::unique('coupons', 'code')->where('tenant_id', $tenant->id)],
             'discount_type'        => ['required', 'in:fixed,percent'],
             'discount_value'       => ['required', 'integer', 'min:0'],
             'minimum_order_cents'  => ['nullable', 'integer', 'min:0'],

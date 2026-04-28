@@ -1,4 +1,4 @@
-export const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+export const apiBaseUrl = "";
 
 type ApiErrorPayload = {
   message?: string;
@@ -45,7 +45,11 @@ export class ApiRequestError extends Error {
 }
 
 export function buildApiUrl(path: string) {
-  return `${apiBaseUrl}${path}`;
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  return path.startsWith("/") ? path : `/${path}`;
 }
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {

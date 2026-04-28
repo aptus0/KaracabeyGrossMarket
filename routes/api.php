@@ -44,6 +44,7 @@ Route::prefix('v1')->group(function (): void {
     Route::delete('/cart/items/{cartItem}', [CartController::class, 'destroy'])->middleware('throttle:api');
     Route::delete('/cart', [CartController::class, 'clear'])->middleware('throttle:api');
     Route::post('/cart/coupon', [CouponController::class, 'validate'])->middleware('throttle:api');
+    Route::delete('/cart/coupon', [CouponController::class, 'destroy'])->middleware('throttle:api');
 
     Route::post('/c', [CheckoutController::class, 'store'])
         ->middleware('throttle:payments')

@@ -30,14 +30,50 @@ function stripTrailingSlash(value: string | null | undefined) {
   return value ? value.replace(/\/+$/, "") : "";
 }
 
-const backendOrigin = stripTrailingSlash(
-  process.env.NEXT_PUBLIC_API_URL
-    ?? process.env.API_URL
-    ?? process.env.APP_URL
-    ?? readLaravelEnvValue("API_URL")
-    ?? readLaravelEnvValue("APP_URL")
-    ?? "http://127.0.0.1:8000",
-);
+function normalizeBackendOrigin(value: string | null | undefined) {
+  const origin = stripTrailingSlash(value);
+
+  if (!origin) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(origin);
+
+    if (parsed.protocol === "http:" && parsed.hostname.endsWith(".test")) {
+      parsed.protocol = "https:";
+    }
+
+    return stripTrailingSlash(parsed.toString());
+  } catch {
+    return origin;
+  }
+}
+
+function isLocalTestOrigin(value: string | null | undefined) {
+  if (!value) {
+    return false;
+  }
+
+  try {
+    return new URL(value).hostname.endsWith(".test");
+  } catch {
+    return false;
+  }
+}
+
+const explicitApiOrigin = process.env.NEXT_PUBLIC_API_URL
+  ?? process.env.API_URL
+  ?? readLaravelEnvValue("API_URL");
+
+const appOrigin = process.env.APP_URL
+  ?? readLaravelEnvValue("APP_URL");
+
+const backendOrigin = explicitApiOrigin
+  ? normalizeBackendOrigin(explicitApiOrigin)
+  : isLocalTestOrigin(appOrigin)
+    ? "http://127.0.0.1:8000"
+    : normalizeBackendOrigin(appOrigin ?? "http://127.0.0.1:8000");
 
 const nextConfig: NextConfig = {
   turbopack: {

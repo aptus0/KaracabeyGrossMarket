@@ -33,6 +33,11 @@ type StorefrontProductResponse = {
 type ProductIndexResponse = {
   data?: StorefrontProductResponse[];
   total?: number;
+  per_page?: number;
+  current_page?: number;
+  last_page?: number;
+  from?: number | null;
+  to?: number | null;
 };
 
 function readLaravelEnvValue(key: string) {
@@ -63,15 +68,55 @@ function stripTrailingSlash(value: string | null | undefined) {
   return value ? value.replace(/\/+$/, "") : "";
 }
 
+function normalizeBackendOrigin(value: string | null | undefined) {
+  const origin = stripTrailingSlash(value);
+
+  if (!origin) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(origin);
+
+    if (parsed.protocol === "http:" && parsed.hostname.endsWith(".test")) {
+      parsed.protocol = "https:";
+    }
+
+    return stripTrailingSlash(parsed.toString());
+  } catch {
+    return origin;
+  }
+}
+
+function isLocalTestOrigin(value: string | null | undefined) {
+  if (!value) {
+    return false;
+  }
+
+  try {
+    return new URL(value).hostname.endsWith(".test");
+  } catch {
+    return false;
+  }
+}
+
 function resolveBackendOrigin() {
-  return stripTrailingSlash(
-    process.env.NEXT_PUBLIC_API_URL
-      ?? process.env.API_URL
-      ?? process.env.APP_URL
-      ?? readLaravelEnvValue("API_URL")
-      ?? readLaravelEnvValue("APP_URL")
-      ?? "http://127.0.0.1:8000",
-  );
+  const explicitApiOrigin = process.env.NEXT_PUBLIC_API_URL
+    ?? process.env.API_URL
+    ?? readLaravelEnvValue("API_URL");
+
+  if (explicitApiOrigin) {
+    return normalizeBackendOrigin(explicitApiOrigin);
+  }
+
+  const appOrigin = process.env.APP_URL
+    ?? readLaravelEnvValue("APP_URL");
+
+  if (isLocalTestOrigin(appOrigin)) {
+    return "http://127.0.0.1:8000";
+  }
+
+  return normalizeBackendOrigin(appOrigin ?? "http://127.0.0.1:8000");
 }
 
 function buildServerApiUrl(path: string) {
@@ -123,10 +168,12 @@ export async function fetchStorefrontProducts(options?: {
   category?: string;
   query?: string;
   perPage?: number;
+  page?: number;
 }) {
   const category = options?.category?.trim();
   const query = options?.query?.trim();
   const perPage = options?.perPage ?? 12;
+  const page = options?.page && options.page > 0 ? Math.floor(options.page) : 1;
   const params = new URLSearchParams();
 
   if (category) {
@@ -138,6 +185,7 @@ export async function fetchStorefrontProducts(options?: {
   }
 
   params.set("per_page", String(perPage));
+  params.set("page", String(page));
 
   try {
     const response = await fetch(buildServerApiUrl(`/api/v1/products?${params.toString()}`), {
@@ -157,13 +205,26 @@ export async function fetchStorefrontProducts(options?: {
     return {
       products,
       total: typeof payload.total === "number" ? payload.total : products.length,
+      perPage: typeof payload.per_page === "number" ? payload.per_page : perPage,
+      currentPage: typeof payload.current_page === "number" ? payload.current_page : page,
+      lastPage: typeof payload.last_page === "number" ? payload.last_page : 1,
+      from: typeof payload.from === "number" ? payload.from : products.length > 0 ? (page - 1) * perPage + 1 : 0,
+      to: typeof payload.to === "number" ? payload.to : (page - 1) * perPage + products.length,
     };
   } catch {
     const fallbackProducts = fallbackFilterProducts(category, query);
+    const total = fallbackProducts.length;
+    const start = (page - 1) * perPage;
+    const visibleProducts = fallbackProducts.slice(start, start + perPage);
 
     return {
-      products: fallbackProducts.slice(0, perPage),
-      total: fallbackProducts.length,
+      products: visibleProducts,
+      total,
+      perPage,
+      currentPage: page,
+      lastPage: Math.max(Math.ceil(total / perPage), 1),
+      from: visibleProducts.length > 0 ? start + 1 : 0,
+      to: visibleProducts.length > 0 ? start + visibleProducts.length : 0,
     };
   }
 }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import { MarketingPixels } from "@/app/_components/MarketingPixels";
+import { CartNotification } from "@/app/_components/CartNotification";
+import { CampaignModal } from "@/app/_components/CampaignModal";
 import { Providers } from "@/app/providers";
 import { buildMetadata, siteUrl } from "@/lib/seo";
 import "./globals.css";
@@ -41,6 +43,8 @@ export default function RootLayout({
       <body className={`s0 ${roboto.variable}`}>
         <Providers>
           {children}
+          <CartNotification />
+          <CampaignModal />
           <MarketingPixels />
         </Providers>
       </body>

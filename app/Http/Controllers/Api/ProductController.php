@@ -17,11 +17,13 @@ class ProductController extends Controller
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:80'],
             'category' => ['nullable', 'string', 'max:120'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:48'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:96'],
         ]);
 
         $tenant = $tenants->resolve($request);
         $perPage = (int) ($validated['per_page'] ?? 12);
+        $page = (int) ($validated['page'] ?? 1);
 
         $query = Product::query()
             ->whereBelongsTo($tenant)
@@ -50,9 +52,21 @@ class ProductController extends Controller
             );
         }
 
-        $products = $query->latest()->paginate($perPage);
+        $products = $query
+            ->latest('id')
+            ->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json($products->through(fn (Product $product): array => $this->serialize($product)));
+        return response()->json([
+            'data' => $products->getCollection()
+                ->map(fn (Product $product): array => $this->serialize($product))
+                ->values(),
+            'total' => $products->total(),
+            'per_page' => $products->perPage(),
+            'current_page' => $products->currentPage(),
+            'last_page' => $products->lastPage(),
+            'from' => $products->firstItem(),
+            'to' => $products->lastItem(),
+        ]);
     }
 
     public function show(Request $request, TenantResolver $tenants, string $slug): JsonResponse

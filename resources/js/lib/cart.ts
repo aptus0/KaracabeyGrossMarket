@@ -16,9 +16,18 @@ export type CartLineItem = {
   product: CartProduct;
 };
 
+export type AppliedCoupon = {
+  code: string;
+  discount_type: "fixed" | "percent";
+  discount_value: number;
+  discount_cents: number;
+  total_cents: number;
+};
+
 export type CartData = {
   cart_token: string | null;
   items: CartLineItem[];
+  applied_coupon: AppliedCoupon | null;
   subtotal_cents: number;
   total_cents: number;
 };
@@ -26,6 +35,7 @@ export type CartData = {
 export const emptyCart: CartData = {
   cart_token: null,
   items: [],
+  applied_coupon: null,
   subtotal_cents: 0,
   total_cents: 0,
 };
@@ -45,6 +55,7 @@ export function normalizeCart(cart?: Partial<CartData> | null): CartData {
   return {
     cart_token: cart?.cart_token ?? null,
     items: cart?.items ?? [],
+    applied_coupon: cart?.applied_coupon ?? null,
     subtotal_cents: cart?.subtotal_cents ?? 0,
     total_cents: cart?.total_cents ?? 0,
   };

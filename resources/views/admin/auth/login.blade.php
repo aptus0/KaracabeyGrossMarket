@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="csp-nonce" nonce="{{ request()->attributes->get('csp_nonce') }}">
     <title>Yönetim Paneli Girişi — Karacabey Gross Market</title>
     @vite(['resources/css/app.css'])
-    <style>
+    <style nonce="{{ request()->attributes->get('csp_nonce') }}">
         /* Login sayfası CSS güvenlik ağı */
         *, *::before, *::after { box-sizing: border-box; }
         body { margin: 0; }
         .login-wrap {
             min-height: 100svh;
             display: flex;
-            background: hsl(var(--background));
+            background: var(--background);
         }
         .login-sidebar {
             display: none;
@@ -22,7 +23,7 @@
             position: sticky;
             top: 0;
             padding: 2.5rem;
-            background: hsl(var(--primary));
+            background: var(--primary);
             color: white;
         }
         @media (min-width: 1024px) { .login-sidebar { display: flex; } }
@@ -46,12 +47,12 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            color: hsl(var(--primary));
+            color: var(--primary);
         }
         .login-logo svg { width: 2.5rem; height: 2.5rem; }
         .login-header { text-align: center; }
         .login-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0 0.25rem; }
-        .login-header p { font-size: 0.875rem; color: hsl(var(--muted-foreground)); margin: 0; }
+        .login-header p { font-size: 0.875rem; color: var(--muted-foreground); margin: 0; }
     </style>
 </head>
 <body>

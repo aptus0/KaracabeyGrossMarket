@@ -10,38 +10,48 @@ use App\Models\Page;
 use App\Support\TenantResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class ContentController extends Controller
 {
     public function homepage(Request $request, TenantResolver $tenants): JsonResponse
     {
         $tenant = $tenants->resolve($request);
-
-        return response()->json([
-            'data' => [
+        $payload = Cache::remember("tenant:{$tenant->id}:content:homepage:v2", now()->addMinutes(2), function () use ($tenant): array {
+            return [
                 'blocks' => HomepageBlock::query()
                     ->whereBelongsTo($tenant)
                     ->where('is_active', true)
                     ->orderBy('sort_order')
                     ->get()
                     ->map(fn (HomepageBlock $block): array => $this->serializeBlock($block))
-                    ->values(),
-                'campaigns' => $this->activeCampaigns($tenant->id)->map(fn (Campaign $campaign): array => $this->serializeCampaign($campaign))->values(),
-            ],
+                    ->values()
+                    ->all(),
+                'campaigns' => $this->activeCampaigns($tenant->id)
+                    ->map(fn (Campaign $campaign): array => $this->serializeCampaign($campaign))
+                    ->values()
+                    ->all(),
+            ];
+        });
+
+        return response()->json([
+            'data' => $payload,
         ]);
     }
 
     public function pages(Request $request, TenantResolver $tenants): JsonResponse
     {
         $tenant = $tenants->resolve($request);
-
-        $pages = Page::query()
-            ->whereBelongsTo($tenant)
-            ->where('is_published', true)
-            ->orderBy('title')
-            ->get()
-            ->map(fn (Page $page): array => $this->serializePage($page, includeBody: false))
-            ->values();
+        $pages = Cache::remember("tenant:{$tenant->id}:content:pages:v1", now()->addMinutes(5), function () use ($tenant): array {
+            return Page::query()
+                ->whereBelongsTo($tenant)
+                ->where('is_published', true)
+                ->orderBy('title')
+                ->get()
+                ->map(fn (Page $page): array => $this->serializePage($page, includeBody: false))
+                ->values()
+                ->all();
+        });
 
         return response()->json(['data' => $pages]);
     }
@@ -49,75 +59,100 @@ class ContentController extends Controller
     public function page(Request $request, TenantResolver $tenants, string $slug): JsonResponse
     {
         $tenant = $tenants->resolve($request);
+        $page = Cache::remember("tenant:{$tenant->id}:content:page:{$slug}:v1", now()->addMinutes(5), function () use ($tenant, $slug): array {
+            $page = Page::query()
+                ->whereBelongsTo($tenant)
+                ->where('is_published', true)
+                ->where('slug', $slug)
+                ->firstOrFail();
 
-        $page = Page::query()
-            ->whereBelongsTo($tenant)
-            ->where('is_published', true)
-            ->where('slug', $slug)
-            ->firstOrFail();
+            return $this->serializePage($page);
+        });
 
-        return response()->json(['data' => $this->serializePage($page)]);
+        return response()->json(['data' => $page]);
     }
 
     public function campaigns(Request $request, TenantResolver $tenants): JsonResponse
     {
         $tenant = $tenants->resolve($request);
+        $campaigns = Cache::remember("tenant:{$tenant->id}:content:campaigns:v2", now()->addMinutes(2), function () use ($tenant): array {
+            return $this->activeCampaigns($tenant->id)
+                ->map(fn (Campaign $campaign): array => $this->serializeCampaign($campaign))
+                ->values()
+                ->all();
+        });
 
         return response()->json([
-            'data' => $this->activeCampaigns($tenant->id)
-                ->map(fn (Campaign $campaign): array => $this->serializeCampaign($campaign))
-                ->values(),
+            'data' => $campaigns,
         ]);
     }
 
     public function campaign(Request $request, TenantResolver $tenants, string $slug): JsonResponse
     {
         $tenant = $tenants->resolve($request);
+        $campaign = Cache::remember("tenant:{$tenant->id}:content:campaign:{$slug}:v2", now()->addMinutes(2), function () use ($tenant, $slug): array {
+            $campaign = Campaign::query()
+                ->where('tenant_id', $tenant->id)
+                ->where('slug', $slug)
+                ->where('is_active', true)
+                ->withCount([
+                    'coupons as active_coupons_count' => fn ($query) => $query->where('is_active', true),
+                ])
+                ->with([
+                    'coupons' => fn ($query) => $query
+                        ->where('is_active', true)
+                        ->orderBy('id'),
+                ])
+                ->firstOrFail();
 
-        $campaign = Campaign::query()
-            ->where('tenant_id', $tenant->id)
-            ->where('slug', $slug)
-            ->where('is_active', true)
-            ->firstOrFail();
+            return $this->serializeCampaign($campaign, full: true);
+        });
 
-        return response()->json(['data' => $this->serializeCampaign($campaign, full: true)]);
+        return response()->json(['data' => $campaign]);
     }
 
     public function marketing(Request $request, TenantResolver $tenants): JsonResponse
     {
         $tenant = $tenants->resolve($request);
-        $setting = $tenant->marketingSetting()->first();
+        $payload = Cache::remember("tenant:{$tenant->id}:content:marketing:v1", now()->addMinutes(5), function () use ($tenant): array {
+            $setting = $tenant->marketingSetting()->first();
 
-        return response()->json([
-            'data' => [
+            return [
                 'google_analytics_id' => $setting?->google_analytics_id ?: config('services.google.analytics_id'),
                 'google_ads_id' => $setting?->google_ads_id ?: config('services.google.ads_id'),
                 'google_ads_conversion_label' => $setting?->google_ads_conversion_label ?: config('services.google.ads_conversion_label'),
                 'google_site_verification' => $setting?->google_site_verification ?: config('services.google.site_verification'),
                 'meta_pixel_id' => $setting?->meta_pixel_id ?: config('services.meta.pixel_id'),
                 'announcement_text' => $setting?->announcement_text,
-            ],
+            ];
+        });
+
+        return response()->json([
+            'data' => $payload,
         ]);
     }
 
     public function navigation(Request $request, TenantResolver $tenants): JsonResponse
     {
         $tenant = $tenants->resolve($request);
+        $payload = Cache::remember("tenant:{$tenant->id}:content:navigation:v1", now()->addMinutes(5), function () use ($tenant): array {
+            $items = NavigationItem::query()
+                ->whereBelongsTo($tenant)
+                ->where('is_active', true)
+                ->orderBy('placement')
+                ->orderBy('sort_order')
+                ->orderBy('label')
+                ->get()
+                ->groupBy('placement')
+                ->map(fn ($items) => $items->map(fn (NavigationItem $item): array => $this->serializeNavigationItem($item))->values());
 
-        $items = NavigationItem::query()
-            ->whereBelongsTo($tenant)
-            ->where('is_active', true)
-            ->orderBy('placement')
-            ->orderBy('sort_order')
-            ->orderBy('label')
-            ->get()
-            ->groupBy('placement')
-            ->map(fn ($items) => $items->map(fn (NavigationItem $item): array => $this->serializeNavigationItem($item))->values());
+            return collect(array_keys(NavigationItem::PLACEMENTS))
+                ->mapWithKeys(fn (string $placement): array => [$placement => $items->get($placement, collect())->values()->all()])
+                ->all();
+        });
 
         return response()->json([
-            'data' => collect(array_keys(NavigationItem::PLACEMENTS))
-                ->mapWithKeys(fn (string $placement): array => [$placement => $items->get($placement, collect())->values()])
-                ->all(),
+            'data' => $payload,
         ]);
     }
 
@@ -128,6 +163,9 @@ class ContentController extends Controller
             ->where('is_active', true)
             ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
             ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
+            ->withCount([
+                'coupons as active_coupons_count' => fn ($query) => $query->where('is_active', true),
+            ])
             ->latest()
             ->get();
     }
@@ -178,15 +216,17 @@ class ContentController extends Controller
             'discount_label'   => $campaign->discount_label,
             'starts_at'        => $campaign->starts_at?->toIso8601String(),
             'ends_at'          => $campaign->ends_at?->toIso8601String(),
-            'coupons_count'    => $campaign->coupons()->where('is_active', true)->count(),
+            'coupons_count'    => (int) ($campaign->active_coupons_count ?? 0),
             'seo'              => $campaign->seo,
         ];
 
         if ($full) {
             $data['body'] = $campaign->body;
-            $data['coupons'] = $campaign->coupons()
-                ->where('is_active', true)
-                ->get()
+            $coupons = $campaign->relationLoaded('coupons')
+                ? $campaign->coupons
+                : $campaign->coupons()->where('is_active', true)->get();
+
+            $data['coupons'] = $coupons
                 ->map(fn ($c) => [
                     'code'           => $c->code,
                     'discount_type'  => $c->discount_type,
