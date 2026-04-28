@@ -16,11 +16,8 @@
     </div>
 
     <div class="space-y-6 p-4 pb-20">
-        <div class="rounded-3xl border border-orange-100 bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300 p-4 text-white shadow-[0_20px_45px_rgba(249,115,22,0.22)]">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.32em] text-white/80">Canli Yonetim</p>
-            <p class="mt-2 text-lg font-semibold">Siparis, finans ve katalog ayni akista</p>
-            <p class="mt-1 text-sm text-white/80">Gunluk operasyonu tek panelden daha net takip edin.</p>
-        </div>
+
+
 
         <!-- Genel Bakış -->
         <div>

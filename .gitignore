@@ -24,3 +24,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Erkur ERP dump (büyük CSV dosyaları)
+erkur_dump/
+erkur_dump/*.csv

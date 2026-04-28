@@ -144,9 +144,24 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
         {/* ── Toolbar ───────────────────────────────────── */}
         <div className="catalog-toolbar">
-          <span className="catalog-toolbar__count">
+          <span
+            className="catalog-toolbar__count"
+            data-nosnippet
+            translate="no"
+          >
             <SlidersHorizontal size={15} />
-            {from > 0 && to > 0 ? `${from}-${to} / ${total}` : total} ürün
+            {from > 0 && to > 0 ? (
+              <>
+                <span aria-hidden="true">{from}</span>
+                <span aria-hidden="true">–</span>
+                <span aria-hidden="true">{to}</span>
+                <span aria-hidden="true"> / </span>
+                <span aria-hidden="true">{total}</span>
+              </>
+            ) : (
+              <span aria-hidden="true">{total}</span>
+            )}{" "}
+            ürün
           </span>
           <div className="catalog-toolbar__actions">
             {params.category && (
