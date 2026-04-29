@@ -3,6 +3,7 @@ import type { KgmProduct } from "@/lib/catalog";
 import { AddToCartButton } from "@/app/_components/AddToCartButton";
 import { FavoriteButton } from "@/app/_components/FavoriteButton";
 import { formatPrice } from "@/lib/catalog";
+import { cn } from "@/lib/utils";
 
 type ProductCardProps = {
   product: KgmProduct;
@@ -11,6 +12,7 @@ type ProductCardProps = {
 
 export function ProductCard({ product, priority = false }: ProductCardProps) {
   const imageUrl = safeImageUrl(product.image);
+  const isFallbackImage = imageUrl === "/assets/kgm-logo.png";
   const outOfStock = product.stock === 0;
   const hasDiscount = Boolean(product.oldPrice && product.oldPrice > product.price);
 
@@ -18,7 +20,11 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
     <article className="product-card">
       {/* ── Image / media area ─────────────────────────────── */}
       <div className="product-card__media">
-        <Link className="product-card__img-link" href={`/product/${product.slug}`} tabIndex={-1}>
+        <Link
+          className={cn("product-card__img-link", isFallbackImage && "product-card__img-link--fallback")}
+          href={`/product/${product.slug}`}
+          tabIndex={-1}
+        >
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

@@ -11,287 +11,369 @@ use Illuminate\Support\Str;
 
 class ImportErkurProducts extends Command
 {
-    protected $signature   = 'erkur:import-products
-                                {--fresh : Önce mevcut tüm ürünleri sil}
+    protected $signature = 'erkur:import-products
+                                {--fresh : Önce mevcut tüm ürün ve kategorileri sil}
                                 {--limit= : Maksimum kaç ürün aktarılsın (test için)}
                                 {--chunk=500 : Toplu insert boyutu}';
 
-    protected $description = 'Erkur ERP STOK.csv dosyasından ürünleri MySQL\'e aktarır';
+    protected $description = 'Erkur ERP CSV dosyalarından ürünleri ve kategorileri MySQL\'e aktarır';
 
-    // ── CSV sütun indeksleri (0-based) ──────────────────────────────────
-    // STOK.csv sütun sırası:
-    // 0=ID, 1=KOD, 2=STOK_GRUP, 3=AD, 4=STOK_CINSI, 5=STOK_VERGI,
-    // 23=AKTIF, 25=WEBDEYAYINLANIRMI, 26=STOK_MARKA, 57=NAME(İngilizce)
-    // 18=SON_ALIS_FIYAT
+    private Tenant $tenant;
 
     public function handle(): int
     {
-        $stokPath     = base_path('erkur_dump/STOK.csv');
-        $birimPath    = base_path('erkur_dump/STOK_STOK_BIRIM.csv');
-        $fiyatPath    = base_path('erkur_dump/STOK_STOK_BIRIM_FIYAT.csv');
-        $barkodPath   = base_path('erkur_dump/STOK_BARKOD.csv');
-        $grupPath     = base_path('erkur_dump/STOK_GRUP.csv');
+        $base = base_path('erkur_dump');
 
-        foreach ([$stokPath, $birimPath, $fiyatPath] as $path) {
-            if (! file_exists($path)) {
-                $this->error("Dosya bulunamadı: $path");
+        foreach (['STOK', 'STOK_STOK_BIRIM', 'STOK_STOK_BIRIM_FIYAT'] as $file) {
+            if (! file_exists("{$base}/{$file}.csv")) {
+                $this->error("Dosya bulunamadı: {$base}/{$file}.csv");
+
                 return self::FAILURE;
             }
         }
 
         $tenant = Tenant::first();
         if (! $tenant) {
-            $this->error('Tenant bulunamadı. Önce migrate:fresh çalıştırın.');
+            $this->error('Tenant bulunamadı. Önce php artisan db:seed çalıştırın.');
+
             return self::FAILURE;
         }
+        $this->tenant = $tenant;
 
-        // ── 1. Fresh temizlik ────────────────────────────────────────────
         if ($this->option('fresh')) {
-            $this->warn('Mevcut ürünler siliniyor...');
-            Product::query()->where('tenant_id', $tenant->id)->delete();
-            $this->info('Ürünler temizlendi.');
+            $this->purge();
         }
 
-        // ── 2. Fiyat haritası: STOK_STOK_BIRIM.ID → parekende fiyat ────
-        $this->info('Fiyat tablosu yükleniyor...');
-        $prices = [];   // birimId => fiyat (kuruş)
+        $markalar = $this->loadMarkalar("{$base}/STOK_MARKA.csv");
+        $categoryMap = $this->loadKategoriler("{$base}/STOK_OZEL_KOD_1.csv");
+        $prices = $this->loadFiyatlar("{$base}/STOK_STOK_BIRIM_FIYAT.csv");
+        $stokBirim = $this->loadBirimler("{$base}/STOK_STOK_BIRIM.csv");
+        $barkodlar = $this->loadBarkodlar("{$base}/STOK_BARKOD.csv");
 
-        $fp = fopen($fiyatPath, 'r');
-        $row = 0;
-        while (($line = fgetcsv($fp, 0, ',')) !== false) {
-            $row++;
-            if ($row <= 2) continue; // başlık + tip satırı
+        [$imported, $skipped] = $this->importProducts(
+            "{$base}/STOK.csv",
+            $markalar, $prices, $stokBirim, $barkodlar
+        );
 
-            // ID, STOK_STOK_BIRIM, DOVIZ_AD, STOK_FIYAT_AD, FIYAT, KDV_DAHILMI
-            $birimId  = (int) $line[1];
-            $fiyatAd  = (int) $line[3]; // 1016 = Parekende
-            $fiyat    = (float) str_replace(',', '.', $line[4]);
+        $linked = $this->linkKategoriler($categoryMap);
 
-            // Parekende fiyatını önceliklendir, yoksa ilk bulduğunu al
-            if ($fiyatAd === 1016 || ! isset($prices[$birimId])) {
-                $prices[$birimId] = (int) round($fiyat * 100);
+        $this->newLine();
+        $this->info('✅ Aktarım tamamlandı!');
+        $this->table(
+            ['Metrik', 'Değer'],
+            [
+                ['Aktarılan ürün',       number_format($imported)],
+                ['Atlanan',              number_format($skipped)],
+                ['Kategori',             number_format(count($categoryMap))],
+                ['Kategorili ürün',      number_format($linked)],
+            ]
+        );
+
+        return self::SUCCESS;
+    }
+
+    private function purge(): void
+    {
+        $this->warn('Mevcut ürünler ve kategoriler siliniyor...');
+        DB::table('category_product')
+            ->whereIn('product_id', DB::table('products')->where('tenant_id', $this->tenant->id)->pluck('id'))
+            ->delete();
+        Product::query()->where('tenant_id', $this->tenant->id)->delete();
+        Category::query()->where('tenant_id', $this->tenant->id)->delete();
+        $this->info('Temizlendi.');
+    }
+
+    /** @return array<int, string> erkurId => marka adı */
+    private function loadMarkalar(string $path): array
+    {
+        $map = [];
+        if (! file_exists($path)) {
+            return $map;
+        }
+
+        $this->info('[1/5] Markalar yükleniyor...');
+        foreach ($this->readCsv($path) as $line) {
+            $id = (int) ($line[0] ?? 0);
+            $ad = trim($line[1] ?? '');
+            if ($id > 0 && $ad !== '') {
+                $map[$id] = $ad;
             }
         }
-        fclose($fp);
-        $this->info('Fiyat kaydı: ' . number_format(count($prices)));
+        $this->line('  → '.number_format(count($map)).' marka');
 
-        // ── 3. Birim haritası: STOK.ID → STOK_STOK_BIRIM.ID ────────────
-        $this->info('Birim tablosu yükleniyor...');
-        $stokBirim = []; // stokId => birimId
+        return $map;
+    }
 
-        $fp = fopen($birimPath, 'r');
-        $row = 0;
-        while (($line = fgetcsv($fp, 0, ',')) !== false) {
-            $row++;
-            if ($row <= 2) continue;
-
-            // ID, STOK, STOK_BIRIM, CARPAN, VARSAYILAN...
-            $birimId  = (int) $line[0];
-            $stokId   = (int) $line[1];
-            $varsayilan = (int) $line[4];
-
-            if ($varsayilan === 1 || ! isset($stokBirim[$stokId])) {
-                $stokBirim[$stokId] = $birimId;
-            }
-        }
-        fclose($fp);
-        $this->info('Birim kaydı: ' . number_format(count($stokBirim)));
-
-        // ── 4. Barkod haritası: stokId → barkod ────────────────────────
-        $this->info('Barkod tablosu yükleniyor...');
-        $barkodlar = [];
-
-        if (file_exists($barkodPath)) {
-            $fp  = fopen($barkodPath, 'r');
-            $row = 0;
-            while (($line = fgetcsv($fp, 0, ',')) !== false) {
-                $row++;
-                if ($row <= 2) continue;
-
-                // ID, STOK_STOK_BIRIM, BARKOD, IC_BARKOD, ...
-                $birimId = (int) $line[1];
-                $barkod  = trim($line[2]);
-
-                if ($barkod && ! empty($barkod) && ! isset($barkodlar[$birimId])) {
-                    $barkodlar[$birimId] = $barkod;
-                }
-            }
-            fclose($fp);
-        }
-        $this->info('Barkod kaydı: ' . number_format(count($barkodlar)));
-
-        // ── 5. Grup haritası: grupId → kategori adı ─────────────────────
-        $this->info('Stok grupları yükleniyor...');
-        $gruplar = [];
-
-        if (file_exists($grupPath)) {
-            $fp  = fopen($grupPath, 'r');
-            $row = 0;
-            while (($line = fgetcsv($fp, 0, ',')) !== false) {
-                $row++;
-                if ($row <= 2) continue;
-                // ID, USTID, AD...
-                $gruplar[(int) $line[0]] = trim($line[2]);
-            }
-            fclose($fp);
+    /** @return array<int, int> erkurOzelId => Category.id */
+    private function loadKategoriler(string $path): array
+    {
+        $map = [];
+        if (! file_exists($path)) {
+            return $map;
         }
 
-        // ── 6. Kategorileri oluştur/bul ─────────────────────────────────
-        $this->info('Kategoriler hazırlanıyor...');
-        $categoryMap = []; // grupId => categoryId
+        $this->info('[2/5] Kategoriler yükleniyor (STOK_OZEL_KOD_1)...');
+        $sort = 10;
+        foreach ($this->readCsv($path) as $line) {
+            $erkurId = (int) ($line[0] ?? 0);
+            $ad = trim($line[1] ?? '');
+            if ($erkurId <= 0 || $ad === '') {
+                continue;
+            }
 
-        foreach ($gruplar as $grupId => $grupAd) {
-            if (empty($grupAd)) continue;
-
+            $slug = Str::slug($ad) ?: 'kategori-'.$erkurId;
             $cat = Category::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'slug' => Str::slug($grupAd) ?: 'grup-' . $grupId],
-                ['name' => $grupAd, 'is_active' => true]
+                ['tenant_id' => $this->tenant->id, 'slug' => $slug],
+                ['name' => $ad, 'is_active' => true, 'sort_order' => $sort]
             );
-            $categoryMap[$grupId] = $cat->id;
+            $map[$erkurId] = $cat->id;
+            $sort += 10;
         }
-        $this->info('Kategori sayısı: ' . count($categoryMap));
+        $this->line('  → '.number_format(count($map)).' kategori');
 
-        // ── 7. STOK.csv'yi oku ve aktar ─────────────────────────────────
-        $this->info('STOK.csv okunuyor...');
+        return $map;
+    }
 
-        $fp        = fopen($stokPath, 'r');
-        $row       = 0;
-        $imported  = 0;
-        $skipped   = 0;
-        $limit     = $this->option('limit') ? (int) $this->option('limit') : PHP_INT_MAX;
-        $chunkSize = (int) ($this->option('chunk') ?: 500);
-        $buffer    = [];
-        $slugsUsed = [];
-
-        // Mevcut slug'ları hafızaya al (duplicate önleme)
-        Product::query()->where('tenant_id', $tenant->id)->select('slug')->chunk(1000, function ($rows) use (&$slugsUsed) {
-            foreach ($rows as $r) {
-                $slugsUsed[$r->slug] = true;
+    /** @return array<int, int> birimId => fiyat (kuruş) */
+    private function loadFiyatlar(string $path): array
+    {
+        $this->info('[3/5] Fiyatlar yükleniyor...');
+        $map = [];
+        foreach ($this->readCsv($path) as $line) {
+            // ID, STOK_STOK_BIRIM, DOVIZ_AD, STOK_FIYAT_AD, FIYAT, KDV_DAHILMI
+            $birimId = (int) ($line[1] ?? 0);
+            $fiyatAd = (int) ($line[3] ?? 0);
+            $fiyat = (float) str_replace(',', '.', $line[4] ?? '0');
+            if ($birimId <= 0) {
+                continue;
             }
-        });
+            if ($fiyatAd === 1016 || ! isset($map[$birimId])) {
+                $map[$birimId] = (int) round($fiyat * 100);
+            }
+        }
+        $this->line('  → '.number_format(count($map)).' fiyat');
+
+        return $map;
+    }
+
+    /** @return array<int, int> stokId => birimId (varsayılan) */
+    private function loadBirimler(string $path): array
+    {
+        $this->info('[4/5] Birimler yükleniyor...');
+        $map = [];
+        foreach ($this->readCsv($path) as $line) {
+            // ID, STOK, STOK_BIRIM, CARPAN, VARSAYILAN...
+            $birimId = (int) ($line[0] ?? 0);
+            $stokId = (int) ($line[1] ?? 0);
+            $varsayilan = (int) ($line[4] ?? 0);
+            if ($stokId <= 0) {
+                continue;
+            }
+            if ($varsayilan === 1 || ! isset($map[$stokId])) {
+                $map[$stokId] = $birimId;
+            }
+        }
+        $this->line('  → '.number_format(count($map)).' birim');
+
+        return $map;
+    }
+
+    /** @return array<int, string> birimId => barkod */
+    private function loadBarkodlar(string $path): array
+    {
+        $map = [];
+        if (! file_exists($path)) {
+            return $map;
+        }
+
+        $this->info('[5/5] Barkodlar yükleniyor...');
+        foreach ($this->readCsv($path) as $line) {
+            // ID, STOK_STOK_BIRIM, BARKOD...
+            $birimId = (int) ($line[1] ?? 0);
+            $barkod = trim($line[2] ?? '');
+            if ($birimId > 0 && $barkod !== '' && ! isset($map[$birimId])) {
+                $map[$birimId] = $barkod;
+            }
+        }
+        $this->line('  → '.number_format(count($map)).' barkod');
+
+        return $map;
+    }
+
+    /** @return array{0: int, 1: int} [imported, skipped] */
+    private function importProducts(
+        string $path,
+        array $markalar,
+        array $prices,
+        array $stokBirim,
+        array $barkodlar,
+    ): array {
+        $this->info('Ürünler aktarılıyor...');
+
+        $limit = $this->option('limit') ? (int) $this->option('limit') : PHP_INT_MAX;
+        $chunkSize = (int) ($this->option('chunk') ?: 500);
+        $imported = 0;
+        $skipped = 0;
+        $buffer = [];
+        $slugsUsed = [];
+        $now = now()->toDateTimeString();
+
+        Product::query()->where('tenant_id', $this->tenant->id)->select('slug')
+            ->chunk(1000, function ($rows) use (&$slugsUsed): void {
+                foreach ($rows as $r) {
+                    $slugsUsed[$r->slug] = true;
+                }
+            });
 
         $bar = $this->output->createProgressBar($limit === PHP_INT_MAX ? 12000 : $limit);
         $bar->start();
 
+        $fp = fopen($path, 'r');
+        $headers = fgetcsv($fp, 0, ',');
+        fgetcsv($fp, 0, ','); // tip satırı (---)
+        $col = array_flip(array_map('trim', $headers));
+
+        $iId = $col['ID'] ?? 0;
+        $iKod = $col['KOD'] ?? 1;
+        $iGrup = $col['STOK_GRUP'] ?? 2;
+        $iAd = $col['AD'] ?? 3;
+        $iAlFiyat = $col['SON_ALIS_FIYAT'] ?? 18;
+        $iAktif = $col['AKTIF'] ?? 23;
+        $iMarka = $col['STOK_MARKA'] ?? 26;
+        $iOzelKod = $col['STOK_OZEL_KOD_1'] ?? 45;
+
         while (($line = fgetcsv($fp, 0, ',')) !== false) {
-            $row++;
+            if ($imported >= $limit) {
+                break;
+            }
 
-            // İlk 2 satır: başlık + tip
-            if ($row <= 2) continue;
+            $stokId = (int) ($line[$iId] ?? 0);
+            $grupId = (int) ($line[$iGrup] ?? 0);
+            $ad = trim($line[$iAd] ?? '');
+            $aktif = (int) ($line[$iAktif] ?? 0);
 
-            if ($imported >= $limit) break;
-
-            // Sütun indeksleri
-            $stokId   = (int)   ($line[0]  ?? 0);
-            $kod      = trim($line[1]  ?? '');
-            $grupId   = (int)   ($line[2]  ?? 0);
-            $ad       = trim($line[3]  ?? '');
-            $aktif    = (int)   ($line[23] ?? 0);
-            $marka    = trim($line[26] ?? '');
-            $sonAliFiyat = (float) str_replace(',', '.', $line[18] ?? '0');
-
-            // Sadece aktif ürünler
-            if ($aktif !== 1 || empty($ad)) {
+            if ($aktif !== 1 || $ad === '' || $grupId === 75983) {
                 $skipped++;
+
                 continue;
             }
 
-            // Fiyat hesapla
-            $birimId    = $stokBirim[$stokId] ?? null;
-            $fiyatKurus = 0;
-
-            if ($birimId && isset($prices[$birimId])) {
-                $fiyatKurus = $prices[$birimId];
-            } elseif ($sonAliFiyat > 0) {
-                // Fallback: son alış fiyatı (KDV ekle varsayılan %18)
-                $fiyatKurus = (int) round($sonAliFiyat * 1.18 * 100);
-            }
-
-            // Barkod
+            $birimId = $stokBirim[$stokId] ?? null;
+            $fiyatKurus = $this->resolveFiyat($birimId, $prices, (float) str_replace(',', '.', $line[$iAlFiyat] ?? '0'));
+            $markaId = (int) ($line[$iMarka] ?? 0);
+            $ozelId = (int) ($line[$iOzelKod] ?? 0);
             $barkod = $birimId ? ($barkodlar[$birimId] ?? null) : null;
-
-            // Slug oluştur (benzersiz)
-            $baseSlug = Str::slug($ad) ?: 'urun-' . $stokId;
-            $slug     = $baseSlug;
-            $suffix   = 1;
-            while (isset($slugsUsed[$slug])) {
-                $slug = $baseSlug . '-' . $suffix++;
-            }
-            $slugsUsed[$slug] = true;
-
-            $now = now()->toDateTimeString();
+            $marka = $markaId > 0 ? ($markalar[$markaId] ?? null) : null;
+            $slug = $this->uniqueSlug($ad, $stokId, $slugsUsed);
 
             $buffer[] = [
-                'tenant_id'              => $tenant->id,
-                'name'                   => $ad,
-                'slug'                   => $slug,
-                'description'            => null,
-                'brand'                  => $marka ?: null,
-                'barcode'                => $barkod,
-                'price_cents'            => $fiyatKurus,
+                'tenant_id' => $this->tenant->id,
+                'name' => $ad,
+                'slug' => $slug,
+                'description' => null,
+                'brand' => $marka,
+                'barcode' => $barkod,
+                'price_cents' => $fiyatKurus,
                 'compare_at_price_cents' => null,
-                'stock_quantity'         => 0,
-                'image_url'              => null,
-                'seo'                    => json_encode(['erkur_kod' => $kod, 'erkur_id' => $stokId]),
-                'metadata'               => json_encode(['erkur_stok_id' => $stokId, 'erkur_grup_id' => $grupId, 'category_id' => $categoryMap[$grupId] ?? null]),
-                'is_active'              => true,
-                'created_at'             => $now,
-                'updated_at'             => $now,
+                'stock_quantity' => 0,
+                'image_url' => null,
+                'seo' => json_encode(['erkur_kod' => $line[$iKod] ?? '', 'erkur_id' => $stokId]),
+                'metadata' => json_encode([
+                    'erkur_stok_id' => $stokId,
+                    'erkur_grup_id' => $grupId,
+                    'erkur_ozel_id' => $ozelId > 0 ? $ozelId : null,
+                ]),
+                'is_active' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
 
             $imported++;
             $bar->advance();
 
-            // Toplu insert
             if (count($buffer) >= $chunkSize) {
                 DB::table('products')->insertOrIgnore($buffer);
                 $buffer = [];
             }
         }
 
-        // Kalan buffer
         if (! empty($buffer)) {
             DB::table('products')->insertOrIgnore($buffer);
         }
 
         fclose($fp);
         $bar->finish();
-        $this->newLine();
 
-        // ── 8. Kategori ilişkilerini kur ────────────────────────────────
+        return [$imported, $skipped];
+    }
+
+    private function resolveFiyat(?int $birimId, array $prices, float $sonAlis): int
+    {
+        if ($birimId !== null && isset($prices[$birimId])) {
+            return $prices[$birimId];
+        }
+
+        return $sonAlis > 0 ? (int) round($sonAlis * 1.18 * 100) : 0;
+    }
+
+    private function uniqueSlug(string $ad, int $stokId, array &$slugsUsed): string
+    {
+        $base = Str::slug($ad) ?: 'urun-'.$stokId;
+        $slug = $base;
+        $suffix = 1;
+        while (isset($slugsUsed[$slug])) {
+            $slug = $base.'-'.$suffix++;
+        }
+        $slugsUsed[$slug] = true;
+
+        return $slug;
+    }
+
+    private function linkKategoriler(array $categoryMap): int
+    {
         $this->info('Kategori ilişkileri kuruluyor...');
+        $linked = 0;
 
         Product::query()
-            ->where('tenant_id', $tenant->id)
+            ->where('tenant_id', $this->tenant->id)
             ->whereNotNull('metadata')
-            ->chunk(500, function ($products) use ($categoryMap) {
+            ->select(['id', 'metadata'])
+            ->chunk(1000, function ($products) use ($categoryMap, &$linked): void {
+                $rows = [];
                 foreach ($products as $product) {
-                    $meta      = is_array($product->metadata) ? $product->metadata : json_decode($product->metadata, true);
-                    $grupId    = $meta['erkur_grup_id'] ?? null;
-                    $catId     = $grupId ? ($categoryMap[$grupId] ?? null) : null;
-
-                    if ($catId) {
-                        DB::table('category_product')
-                            ->insertOrIgnore([
-                                'product_id'  => $product->id,
-                                'category_id' => $catId,
-                            ]);
+                    $meta = is_array($product->metadata) ? $product->metadata : json_decode((string) $product->metadata, true);
+                    $ozelId = $meta['erkur_ozel_id'] ?? null;
+                    $catId = $ozelId ? ($categoryMap[$ozelId] ?? null) : null;
+                    if ($catId !== null) {
+                        $rows[] = ['product_id' => $product->id, 'category_id' => $catId];
+                        $linked++;
                     }
+                }
+                if (! empty($rows)) {
+                    DB::table('category_product')->insertOrIgnore($rows);
                 }
             });
 
-        $this->newLine();
-        $this->info("✅ Aktarım tamamlandı!");
-        $this->table(
-            ['Metrik', 'Değer'],
-            [
-                ['İşlenen satır', number_format($row - 2)],
-                ['Aktarılan ürün', number_format($imported)],
-                ['Atlanan (aktif değil)', number_format($skipped)],
-                ['Kategori', number_format(count($categoryMap))],
-            ]
-        );
+        $this->line("  → {$linked} ürüne kategori atandı");
 
-        return self::SUCCESS;
+        return $linked;
+    }
+
+    /**
+     * CSV'yi satır satır okur, başlık ve tip satırlarını atlar.
+     *
+     * @return iterable<array<int, string>>
+     */
+    private function readCsv(string $path): iterable
+    {
+        $fp = fopen($path, 'r');
+        $row = 0;
+        while (($line = fgetcsv($fp, 0, ',')) !== false) {
+            if (++$row <= 2) {
+                continue; // başlık + tip satırı
+            }
+            yield $line;
+        }
+        fclose($fp);
     }
 }

@@ -1,35 +1,27 @@
 import Foundation
-import Combine
 
 @MainActor
-class HomeViewModel: ObservableObject {
-    @Published var products: [Product] = []
+final class HomeViewModel: ObservableObject {
+    @Published var featuredProducts: [Product] = []
     @Published var categories: [Category] = []
-    @Published var isLoadingProducts = false
-    @Published var isLoadingCategories = false
+    @Published var isLoading = false
     @Published var errorMessage: String?
-    
-    func fetchProducts() async {
-        isLoadingProducts = true
+
+    func load() async {
+        guard featuredProducts.isEmpty else { return }
+        isLoading    = true
         errorMessage = nil
+        defer { isLoading = false }
+        async let p: PaginatedResponse<Product> = APIClient.shared.request(
+            ProductsEndpoint.list(page: 1, perPage: 12, category: nil, query: nil)
+        )
+        async let c: ArrayResponse<Category> = APIClient.shared.request(CategoriesEndpoint.list)
         do {
-            let response: PaginatedResponse<Product> = try await APIClient.shared.request(AppEndpoints.getProducts(page: 1))
-            self.products = response.data
+            let (products, cats) = try await (p, c)
+            featuredProducts = products.data
+            categories       = cats.data
         } catch {
-            self.errorMessage = "Ürünler yüklenirken bir hata oluştu."
-            print("Fetch products error: \(error)")
+            errorMessage = (error as? NetworkError)?.errorDescription ?? "Yüklenemedi."
         }
-        isLoadingProducts = false
-    }
-    
-    func fetchCategories() async {
-        isLoadingCategories = true
-        do {
-            let response: ArrayResponse<Category> = try await APIClient.shared.request(AppEndpoints.getCategories)
-            self.categories = response.data
-        } catch {
-            print("Fetch categories error: \(error)")
-        }
-        isLoadingCategories = false
     }
 }

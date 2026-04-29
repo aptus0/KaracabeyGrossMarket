@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState, type CSSProperties, type PointerEvent } from "react";
+import { Images, X, ZoomIn } from "lucide-react";
 import type { Swiper as SwiperType } from "swiper";
 import { FreeMode, Navigation, Thumbs } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { cn } from "@/lib/utils";
 
 type ProductGalleryProps = {
   images: string[];
@@ -12,8 +14,11 @@ type ProductGalleryProps = {
 
 export function ProductGallery({ images, name }: ProductGalleryProps) {
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
+  const [activeImage, setActiveImage] = useState(images[0] ?? "");
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
   const safeImages = useMemo(() => images.filter(Boolean), [images]);
+  const selectedImage = activeImage || safeImages[0];
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -32,13 +37,14 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
         className="product-gallery__main"
         modules={[FreeMode, Navigation, Thumbs]}
         navigation={safeImages.length > 1}
+        onSlideChange={(swiper) => setActiveImage(safeImages[swiper.activeIndex] ?? safeImages[0] ?? "")}
         spaceBetween={12}
         thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
       >
         {safeImages.map((image, index) => (
           <SwiperSlide key={`${image}-${index}`}>
             <div
-              className="product-gallery__image"
+              className={cn("product-gallery__image", image === "/assets/kgm-logo.png" && "product-gallery__image--fallback")}
               onPointerMove={handlePointerMove}
               style={
                 {
@@ -50,6 +56,16 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={image} alt={index === 0 ? name : `${name} görsel ${index + 1}`} />
+              <div className="product-gallery__meta">
+                <span>
+                  <Images size={15} />
+                  {index + 1}/{safeImages.length}
+                </span>
+                <button type="button" onClick={() => setViewerOpen(true)}>
+                  <ZoomIn size={15} />
+                  Yakınlaştır
+                </button>
+              </div>
               <span className="product-gallery__zoom" aria-hidden="true" />
             </div>
           </SwiperSlide>
@@ -75,6 +91,29 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
             </SwiperSlide>
           ))}
         </Swiper>
+      ) : null}
+
+      {viewerOpen && selectedImage ? (
+        <div className="product-gallery-viewer" role="dialog" aria-modal="true" aria-label={`${name} görsel yakınlaştırma`}>
+          <button
+            type="button"
+            className="product-gallery-viewer__backdrop"
+            aria-label="Görseli kapat"
+            onClick={() => setViewerOpen(false)}
+          />
+          <div className="product-gallery-viewer__panel">
+            <button
+              type="button"
+              className="product-gallery-viewer__close"
+              aria-label="Kapat"
+              onClick={() => setViewerOpen(false)}
+            >
+              <X size={18} />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={selectedImage} alt={name} />
+          </div>
+        </div>
       ) : null}
     </div>
   );

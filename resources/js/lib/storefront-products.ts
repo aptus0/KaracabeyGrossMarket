@@ -126,6 +126,7 @@ function buildServerApiUrl(path: string) {
 function toStorefrontProduct(product: StorefrontProductResponse): KgmProduct {
   const primaryCategory = product.categories?.[0];
   const imageUrl = safeImageUrl(product.image_url) ?? "/assets/kgm-logo.png";
+  const sku = getSeoString(product.seo, "erkur_kod") ?? getSeoString(product.seo, "sku");
   const hasCompareAtPrice = Boolean(
     product.compare_at_price_cents && product.compare_at_price_cents > product.price_cents,
   );
@@ -134,6 +135,7 @@ function toStorefrontProduct(product: StorefrontProductResponse): KgmProduct {
     slug: product.slug,
     name: product.name,
     brand: product.brand?.trim() || "Karacabey Gross Market",
+    sku,
     price: product.price_cents / 100,
     oldPrice: hasCompareAtPrice ? product.compare_at_price_cents! / 100 : undefined,
     unit: "adet",
@@ -147,7 +149,14 @@ function toStorefrontProduct(product: StorefrontProductResponse): KgmProduct {
         : "Tükendi",
     description: product.description?.trim() || `${product.name} için güncel ürün bilgisi.`,
     category: primaryCategory?.slug ?? "genel",
+    categoryName: primaryCategory?.name ?? "Genel katalog",
   };
+}
+
+function getSeoString(seo: StorefrontProductResponse["seo"], key: string): string | undefined {
+  const value = seo?.[key];
+
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 function safeImageUrl(url?: string | null): string | null {

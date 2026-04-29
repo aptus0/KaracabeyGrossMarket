@@ -1,22 +1,21 @@
 import Foundation
-import Combine
 
 @MainActor
-class CategoriesViewModel: ObservableObject {
+final class CategoriesViewModel: ObservableObject {
     @Published var categories: [Category] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
-    func fetchCategories() async {
-        isLoading = true
+
+    func load() async {
+        guard categories.isEmpty else { return }
+        isLoading    = true
         errorMessage = nil
+        defer { isLoading = false }
         do {
-            let response: ArrayResponse<Category> = try await APIClient.shared.request(AppEndpoints.getCategories)
-            self.categories = response.data
+            let response: ArrayResponse<Category> = try await APIClient.shared.request(CategoriesEndpoint.list)
+            categories = response.data
         } catch {
-            self.errorMessage = "Kategoriler yüklenirken bir hata oluştu."
-            print("Fetch categories error: \(error)")
+            errorMessage = (error as? NetworkError)?.errorDescription ?? "Kategoriler yüklenemedi."
         }
-        isLoading = false
     }
 }

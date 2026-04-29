@@ -2,95 +2,63 @@ import SwiftUI
 
 struct CategoriesView: View {
     @StateObject private var viewModel = CategoriesViewModel()
-    
-    let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
-    
+
+    let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+
     var body: some View {
-        VStack(spacing: 0) {
-            CustomAppBar(title: "Kategoriler", showBackButton: false, showCart: true)
-            
+        Group {
             if viewModel.isLoading {
-                Spacer()
-                ProgressView("Kategoriler Yükleniyor...")
-                Spacer()
-            } else if let error = viewModel.errorMessage {
-                Spacer()
-                Text(error)
-                    .foregroundColor(.red)
-                Spacer()
+                ProgressView("Kategoriler yükleniyor…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let err = viewModel.errorMessage {
+                VStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle").font(.largeTitle).foregroundColor(.orange)
+                    Text(err).foregroundColor(.secondary)
+                    Button("Tekrar Dene") { Task { await viewModel.load() } }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: 16) {
-                        ForEach(viewModel.categories) { category in
-                            CategoryCard(category: category)
+                        ForEach(viewModel.categories) { cat in
+                            NavigationLink(destination: ProductsView(initialCategory: cat.slug)) {
+                                CategoryGridCard(category: cat)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding()
                 }
             }
         }
+        .navigationTitle("Kategoriler")
         .background(Color(UIColor.systemGroupedBackground))
-        .navigationBarHidden(true)
-        .onAppear {
-            Task {
-                if viewModel.categories.isEmpty {
-                    await viewModel.fetchCategories()
-                }
-            }
-        }
+        .task { await viewModel.load() }
     }
 }
 
-struct CategoryCard: View {
+struct CategoryGridCard: View {
     let category: Category
-    
     var body: some View {
-        VStack {
-            if let imageUrlStr = category.imageUrl, let url = URL(string: imageUrlStr) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        ProgressView()
-                            .frame(height: 100)
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(height: 100)
-                            .padding()
-                    case .failure:
-                        Image(systemName: "folder")
-                            .font(.system(size: 40))
-                            .foregroundColor(.gray)
-                            .frame(height: 100)
-                    @unknown default:
-                        EmptyView()
-                    }
-                }
-            } else {
-                Image(systemName: "folder")
-                    .font(.system(size: 40))
-                    .foregroundColor(.gray)
-                    .frame(height: 100)
-            }
-            
+        VStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.kgmOrange.opacity(0.1))
+                .frame(height: 80)
+                .overlay(
+                    Image(systemName: "tag.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(.kgmOrange)
+                )
             Text(category.name)
-                .font(.poppins(weight: .bold, size: 14))
+                .font(.poppins(weight: .medium, size: 12))
                 .foregroundColor(.kgmDarkGray)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 8)
-                .padding(.bottom, 12)
+                .lineLimit(2)
+                .padding(.horizontal, 4)
         }
-        .frame(maxWidth: .infinity)
+        .padding(10)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+        .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
     }
-}
-
-#Preview {
-    CategoriesView()
 }

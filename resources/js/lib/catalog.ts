@@ -2,6 +2,7 @@ export type KgmProduct = {
   slug: string;
   name: string;
   brand: string;
+  sku?: string;
   price: number;
   oldPrice?: number;
   unit: string;
@@ -11,6 +12,7 @@ export type KgmProduct = {
   badge: string;
   description: string;
   category: string;
+  categoryName?: string;
 };
 
 export type KgmCategory = {

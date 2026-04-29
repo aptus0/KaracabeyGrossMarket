@@ -5,6 +5,19 @@ $defaultOrigins = implode(',', array_filter([
     env('ADMIN_URL', 'http://localhost:8000'),
 ]));
 
+$localOriginPatterns = env('APP_ENV', 'production') === 'local' ? [
+    '#^https?://localhost(:[0-9]+)?$#',
+    '#^https?://127\.0\.0\.1(:[0-9]+)?$#',
+    '#^https?://192\.168\.[0-9]+\.[0-9]+(:[0-9]+)?$#',
+    '#^https?://10\.[0-9]+\.[0-9]+\.[0-9]+(:[0-9]+)?$#',
+    '#^https?://172\.(1[6-9]|2[0-9]|3[0-1])\.[0-9]+\.[0-9]+(:[0-9]+)?$#',
+] : [];
+
+$configuredOriginPatterns = env('CORS_ALLOWED_ORIGINS_PATTERNS');
+$allowedOriginPatterns = $configuredOriginPatterns
+    ? array_values(array_filter(array_map('trim', explode(',', $configuredOriginPatterns))))
+    : $localOriginPatterns;
+
 return [
     'paths' => ['api/*'],
 
@@ -12,7 +25,7 @@ return [
 
     'allowed_origins' => array_values(array_filter(array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', $defaultOrigins))))),
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => $allowedOriginPatterns,
 
     'allowed_headers' => ['*'],
 

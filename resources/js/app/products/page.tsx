@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SlidersHorizontal } from "lucide-react";
-import { CategoryCard } from "@/app/_components/CategoryCard";
 import { ProductGrid } from "@/app/_components/ProductGrid";
 import { SearchBar } from "@/app/_components/SearchBar";
 import { SeoHead } from "@/app/_components/SeoHead";
@@ -114,32 +113,32 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
         {/* ── Category chips ────────────────────────────── */}
         {categories.length > 0 && (
-          <div className="catalog-chips">
-            <Link
-              href="/products"
-              className={`catalog-chip${!params.category ? " catalog-chip--active" : ""}`}
-            >
-              Tümü
-            </Link>
-            {categories.map((cat) => (
+          <section className="catalog-filter-panel" aria-label="Kategori filtreleri">
+            <div className="catalog-filter-panel__head">
+              <div>
+                <span className="catalog-filter-panel__label">Kategoriler</span>
+                <strong>{activeCategory ? activeCategory.name : "Tüm reyonlar"}</strong>
+              </div>
+              <span className="catalog-filter-panel__meta">{categories.length} kategori</span>
+            </div>
+            <div className="catalog-chips">
               <Link
-                key={cat.slug}
-                href={`/products?category=${cat.slug}`}
-                className={`catalog-chip${params.category === cat.slug ? " catalog-chip--active" : ""}`}
+                href="/products"
+                className={`catalog-chip${!params.category ? " catalog-chip--active" : ""}`}
               >
-                {cat.name}
+                Tümü
               </Link>
-            ))}
-          </div>
-        )}
-
-        {/* ── Compact category grid (desktop sidebar feel) ── */}
-        {categories.length > 0 && (
-          <div className="category-grid category-grid--compact">
-            {categories.map((category) => (
-              <CategoryCard key={category.slug} category={category} />
-            ))}
-          </div>
+              {categories.map((cat) => (
+                <Link
+                  key={cat.slug}
+                  href={`/products?category=${cat.slug}`}
+                  className={`catalog-chip${params.category === cat.slug ? " catalog-chip--active" : ""}`}
+                >
+                  {cat.name}
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* ── Toolbar ───────────────────────────────────── */}

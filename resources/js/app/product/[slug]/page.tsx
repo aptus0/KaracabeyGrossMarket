@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/app/_components/Breadcrumb";
 import { PriceBox } from "@/app/_components/PriceBox";
 import { ProductGallery } from "@/app/_components/ProductGallery";
+import { ProductInfoAccordions } from "@/app/_components/ProductInfoAccordions";
 import { ProductPurchasePanel } from "@/app/_components/ProductPurchasePanel";
 import { ProductSlider } from "@/app/_components/ProductSlider";
 import { SeoHead } from "@/app/_components/SeoHead";
@@ -91,18 +92,36 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <section className="product-detail">
           <ProductGallery images={product.gallery ?? [product.image]} name={product.name} />
           <div className="product-detail__content">
-            <span className="pill">{product.badge}</span>
-            <h1>{product.name}</h1>
-            <p>{product.description}</p>
-            <PriceBox price={product.price} oldPrice={product.oldPrice} unit={product.unit} />
-            <div className="stock-row">
-              <span>Stok</span>
-              <strong>{product.stock} adet</strong>
+            <div className="product-detail__topline">
+              <span className="pill">{product.badge}</span>
+              <span>{product.categoryName ?? "Genel katalog"}</span>
             </div>
+            <h1>{product.name}</h1>
+            <p className="product-detail__lead">{product.description}</p>
+            <PriceBox price={product.price} oldPrice={product.oldPrice} unit={product.unit} />
+
+            <div className="product-detail__meta-grid">
+              <div>
+                <span>Ürün kodu</span>
+                <strong>{product.sku ?? product.slug}</strong>
+              </div>
+              <div>
+                <span>Stok durumu</span>
+                <strong>{product.stock > 0 ? `${product.stock} adet` : "Teyit gerekli"}</strong>
+              </div>
+              <div>
+                <span>Birim</span>
+                <strong>{product.unit}</strong>
+              </div>
+            </div>
+
             <ProductPurchasePanel productSlug={product.slug} />
-            <Link className="secondary-action" href="/products">
-              Ürünlere Dön
-            </Link>
+            <ProductInfoAccordions product={product} />
+            <div className="product-detail__actions">
+              <Link className="secondary-action" href="/products">
+                Ürünlere Dön
+              </Link>
+            </div>
           </div>
         </section>
 

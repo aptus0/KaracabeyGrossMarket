@@ -114,6 +114,10 @@
         <div>
             <h4 class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Sistem</h4>
             <nav class="space-y-1">
+                <a href="{{ route('admin.auth-logs.index') }}" class="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all {{ request()->routeIs('admin.auth-logs.*') ? 'bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-[0_14px_32px_rgba(249,115,22,0.24)]' : 'text-slate-600 hover:bg-orange-50 hover:text-orange-700' }}">
+                    <x-lucide-shield-alert class="h-4 w-4" />
+                    Auth Log
+                </a>
                 <a href="{{ route('admin.marketing.edit') }}" class="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all {{ request()->routeIs('admin.marketing.*') ? 'bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-[0_14px_32px_rgba(249,115,22,0.24)]' : 'text-slate-600 hover:bg-orange-50 hover:text-orange-700' }}">
                     <x-lucide-bar-chart-2 class="h-4 w-4" />
                     Google & Meta (Pixel)

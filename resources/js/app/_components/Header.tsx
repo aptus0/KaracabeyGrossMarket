@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
@@ -17,6 +16,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import { CartSheet } from "@/app/_components/CartSheet";
 import { KgmLogo } from "@/app/_components/KgmLogo";
 import { MegaMenu } from "@/app/_components/MegaMenu";
 import { NavIcon } from "@/app/_components/NavIcon";
@@ -25,18 +25,13 @@ import { useAuthStore } from "@/lib/auth-store";
 import { cartItemCount } from "@/lib/cart";
 import { useCartStore } from "@/lib/cart-store";
 import { apiRequest } from "@/lib/api";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   defaultNavigation,
   fetchNavigation,
   type NavigationData,
   type NavigationItem,
 } from "@/lib/navigation";
-
-const CartSheet = dynamic(
-  () => import("@/app/_components/CartSheet").then((module) => module.CartSheet),
-  { ssr: false },
-);
 
 type HeaderProps = {
   compact?: boolean;
