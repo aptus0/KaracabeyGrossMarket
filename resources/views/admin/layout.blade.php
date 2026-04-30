@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
-    <title>@yield('title', 'Yönetim Paneli') | Karacabey Gross Market</title>
+    <title>@yield('title', 'Teknik Servis') | KGM Operasyon</title>
     <style nonce="{{ request()->attributes->get('csp_nonce') }}">
         
         /* shadcn/ui Renk Paleti ve Değişkenleri */

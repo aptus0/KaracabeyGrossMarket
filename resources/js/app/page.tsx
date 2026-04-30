@@ -5,6 +5,7 @@ import { HomeCarousel } from "@/app/_components/HomeCarousel";
 import { MobileCatalogRedirect } from "@/app/_components/MobileCatalogRedirect";
 import { ProductSlider } from "@/app/_components/ProductSlider";
 import { SeoHead } from "@/app/_components/SeoHead";
+import { TrustBar } from "@/app/_components/TrustBar";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
 import { buildMetadata } from "@/lib/seo";
 import {
@@ -42,6 +43,8 @@ export default async function Home() {
 
       <main>
         <HomeCarousel />
+
+        <TrustBar />
 
         {categories.length > 0 && (
           <section className="content-band" aria-label="Kategoriler">

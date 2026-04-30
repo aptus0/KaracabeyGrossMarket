@@ -11,6 +11,11 @@ export default defineConfig({
         tailwindcss(),
     ],
     server: {
+        host: 'karacabey-gross-market.test',
+        hmr: {
+            host: 'karacabey-gross-market.test',
+            protocol: 'wss',
+        },
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },

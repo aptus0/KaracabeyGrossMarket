@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Campaign extends Model
 {
@@ -18,6 +19,7 @@ class Campaign extends Model
         'description',
         'body',
         'banner_image_url',
+        'image_path',
         'meta_image_url',
         'badge_label',
         'color_hex',
@@ -49,6 +51,15 @@ class Campaign extends Model
     public function coupons(): HasMany
     {
         return $this->hasMany(Coupon::class);
+    }
+
+    public function getBannerUrlAttribute(): ?string
+    {
+        if ($this->image_path) {
+            return Storage::disk('public')->url($this->image_path);
+        }
+
+        return $this->banner_image_url ?: null;
     }
 
     /** Kullanıcıya gösterilecek indirim etiketi */

@@ -5,15 +5,19 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Campaign;
 use App\Models\Coupon;
+use App\Services\ImageUploadService;
 use App\Support\TenantResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CampaignController extends Controller
 {
+    public function __construct(private readonly ImageUploadService $images) {}
+
     public function index(): View
     {
         return view('admin.campaigns.index', [
@@ -24,12 +28,13 @@ class CampaignController extends Controller
 
     public function store(Request $request, TenantResolver $tenants): RedirectResponse
     {
-        $tenant   = $tenants->resolve($request);
+        $tenant    = $tenants->resolve($request);
         $validated = $request->validate([
             'name'             => ['required', 'string', 'max:255'],
             'slug'             => ['nullable', 'string', 'max:255'],
             'description'      => ['nullable', 'string', 'max:1000'],
             'body'             => ['nullable', 'string'],
+            'banner_image'     => ['nullable', 'file', 'mimes:' . ImageUploadService::MIMES, 'max:' . ImageUploadService::MAX_KB],
             'banner_image_url' => ['nullable', 'url', 'max:500'],
             'meta_image_url'   => ['nullable', 'url', 'max:500'],
             'badge_label'      => ['nullable', 'string', 'max:60'],
@@ -44,8 +49,19 @@ class CampaignController extends Controller
             'seo_description'  => ['nullable', 'string', 'max:500'],
         ]);
 
-        $validated['slug']  = $validated['slug'] ?: Str::slug($validated['name']);
-        $validated['seo']   = [
+        $imagePath = null;
+        if ($request->hasFile('banner_image')) {
+            $imagePath = $this->images->store(
+                file: $request->file('banner_image'),
+                folder: 'campaigns',
+                maxWidth: 1200,
+                maxHeight: 630,
+            );
+        }
+
+        $validated['slug']       = $validated['slug'] ?: Str::slug($validated['name']);
+        $validated['image_path'] = $imagePath;
+        $validated['seo']        = [
             'title'       => $validated['seo_title'] ?? $validated['name'],
             'description' => $validated['seo_description'] ?? $validated['description'] ?? null,
         ];
@@ -53,9 +69,10 @@ class CampaignController extends Controller
         $validated['sort_order'] = $validated['sort_order'] ?? 0;
         $validated['color_hex']  = $validated['color_hex'] ?? '#FF7A00';
 
-        unset($validated['seo_title'], $validated['seo_description']);
+        unset($validated['seo_title'], $validated['seo_description'], $validated['banner_image']);
 
         Campaign::query()->create($validated + ['tenant_id' => $tenant->id]);
+        Cache::forget("tenant:{$tenant->id}:content:campaigns:v2");
 
         return back()->with('status', 'Kampanya oluşturuldu.');
     }

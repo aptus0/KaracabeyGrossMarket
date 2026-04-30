@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 enum NetworkError: LocalizedError {
     case invalidURL
@@ -46,13 +47,30 @@ final class AuthManager: ObservableObject {
 
 // MARK: - APIClient
 
+// Bypasses SSL validation for local .test domains during development
+private final class DevSessionDelegate: NSObject, URLSessionDelegate {
+    func urlSession(_ session: URLSession,
+                    didReceive challenge: URLAuthenticationChallenge,
+                    completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let trust = challenge.protectionSpace.serverTrust else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        completionHandler(.useCredential, URLCredential(trust: trust))
+    }
+}
+
 final class APIClient {
     static let shared = APIClient()
-    private init() {}
+    private let session: URLSession
+    private init() {
+        let delegate = DevSessionDelegate()
+        session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+    }
 
-    // Geliştirme için Herd local URL; Release için APP_BASE_URL env / xcconfig kullanılabilir
     var baseURL: String {
-        ProcessInfo.processInfo.environment["APP_BASE_URL"] ?? "http://karacabey-gross-market.test/api/v1"
+        ProcessInfo.processInfo.environment["APP_BASE_URL"] ?? "https://karacabey-gross-market.test/api/v1"
     }
 
     func request<T: Decodable>(_ endpoint: any Endpoint) async throws -> T {
@@ -74,7 +92,7 @@ final class APIClient {
 
         let (data, response): (Data, URLResponse)
         do {
-            (data, response) = try await URLSession.shared.data(for: req)
+            (data, response) = try await session.data(for: req)
         } catch {
             throw NetworkError.unknown(error)
         }

@@ -17,14 +17,27 @@ class SecurityHeaders
         /** @var Response $response */
         $response = $next($request);
 
-        $scriptSources = ["'self'", "'nonce-{$nonce}'", 'https://www.paytr.com'];
-        $styleSources = ["'self'", "'nonce-{$nonce}'"];
+        $scriptSources  = ["'self'", "'nonce-{$nonce}'", 'https://www.paytr.com'];
+        $styleSources   = ["'self'", "'nonce-{$nonce}'"];
         $connectSources = ["'self'", 'https://www.paytr.com', 'https://*.paytr.com'];
+        $formSources    = ["'self'", 'https://www.paytr.com'];
 
         foreach ($this->viteDevelopmentSources() as $source) {
-            $scriptSources[] = $source;
-            $styleSources[] = $source;
+            $scriptSources[]  = $source;
+            $styleSources[]   = $source;
             $connectSources[] = $source;
+        }
+
+        // In local dev: relax restrictions for HMR, inline scripts and mixed-scheme form actions
+        if (app()->isLocal()) {
+            $scriptSources[]  = "'unsafe-inline'";
+            $styleSources[]   = "'unsafe-inline'";
+            $formSources[]    = $request->getSchemeAndHttpHost();   // actual browser origin
+            $formSources[]    = config('app.url');                  // APP_URL value
+            $formSources[]    = 'http://localhost:8000';
+            $formSources[]    = 'http://127.0.0.1:8000';
+            $formSources[]    = 'https://karacabey-gross-market.test';
+            $formSources[]    = 'http://karacabey-gross-market.test';
         }
 
         $directives = [
@@ -34,11 +47,11 @@ class SecurityHeaders
             "frame-src 'self' https://www.paytr.com https://*.paytr.com",
             "frame-ancestors 'self' https://karacabeygrossmarket.com https://www.karacabeygrossmarket.com https://app.karacabeygrossmarket.com",
             'script-src ' . implode(' ', array_unique($scriptSources)),
-            'style-src ' . implode(' ', array_unique($styleSources)),
+            'style-src '  . implode(' ', array_unique($styleSources)),
             "img-src 'self' data: https:",
             "font-src 'self' data:",
             'connect-src ' . implode(' ', array_unique($connectSources)),
-            "form-action 'self' https://www.paytr.com",
+            'form-action '  . implode(' ', array_unique($formSources)),
         ];
 
         if (app()->isProduction()) {

@@ -50,15 +50,11 @@
 		};
 		119CF6F92F9BC040004CABC2 /* Karacabey Gross MarketTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = "Karacabey Gross MarketTests";
 			sourceTree = "<group>";
 		};
 		119CF7032F9BC040004CABC2 /* Karacabey Gross MarketUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = "Karacabey Gross MarketUITests";
 			sourceTree = "<group>";
 		};

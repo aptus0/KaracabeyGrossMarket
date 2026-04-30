@@ -36,6 +36,11 @@ struct Product: Codable, Identifiable, Hashable {
     }
 
     var isInStock: Bool { stockQuantity > 0 }
+
+    var originalPrice: String? {
+        guard let compare = compareAtPriceCents, compare > priceCents else { return nil }
+        return String(format: "%.2f ₺", Double(compare) / 100)
+    }
 }
 
 struct ProductCategory: Codable, Identifiable, Hashable {
