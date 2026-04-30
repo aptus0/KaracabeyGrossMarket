@@ -10,12 +10,12 @@ final class AuthViewModel: ObservableObject {
     private let cartManager = CartManager.shared
     private let favManager  = FavoritesManager.shared
 
-    func login(email: String, password: String) async -> Bool {
+    func login(phone: String, password: String) async -> Bool {
         isLoading    = true
         errorMessage = nil
         defer { isLoading = false }
         do {
-            let req = LoginRequest(email: email.lowercased().trimmingCharacters(in: .whitespaces), password: password)
+            let req = LoginRequest(phone: phone.trimmingCharacters(in: .whitespaces), password: password)
             let response: AuthResponse = try await APIClient.shared.request(AuthEndpoint.login(req))
             authManager.token       = response.token
             authManager.currentUser = response.user
@@ -28,14 +28,14 @@ final class AuthViewModel: ObservableObject {
         }
     }
 
-    func register(name: String, email: String, password: String) async -> Bool {
+    func register(name: String, phone: String, password: String) async -> Bool {
         isLoading    = true
         errorMessage = nil
         defer { isLoading = false }
         do {
             let req = RegisterRequest(
                 name:                 name.trimmingCharacters(in: .whitespaces),
-                email:                email.lowercased().trimmingCharacters(in: .whitespaces),
+                phone:                phone.trimmingCharacters(in: .whitespaces),
                 password:             password,
                 passwordConfirmation: password
             )

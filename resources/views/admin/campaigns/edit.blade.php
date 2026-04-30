@@ -18,7 +18,7 @@
         @endif
 
         <x-ui.card>
-            <form action="{{ route('admin.campaigns.update', $campaign) }}" method="POST">
+            <form action="{{ route('admin.campaigns.update', $campaign) }}" method="POST" enctype="multipart/form-data">
                 @csrf @method('PUT')
                 <div class="p-6 grid gap-4 md:grid-cols-2">
                     <div class="space-y-2 md:col-span-2">
@@ -43,11 +43,15 @@
                         <x-ui.textarea id="body" name="body" rows="6">{{ old('body', $campaign->body) }}</x-ui.textarea>
                     </div>
                     <div class="space-y-2 md:col-span-2">
-                        <x-ui.label for="banner_image_url">Kapak Görseli URL</x-ui.label>
-                        <x-ui.input id="banner_image_url" name="banner_image_url" type="url" value="{{ old('banner_image_url', $campaign->banner_image_url) }}" placeholder="https://..." />
+                        <x-ui.label for="banner_image">Kapak Görseli Yükle (Önerilen: 1200x630)</x-ui.label>
+                        <x-ui.input id="banner_image" name="banner_image" type="file" accept=".jpg,.jpeg,.png,.webp" />
                         @if($campaign->banner_image_url)
                         <img src="{{ $campaign->banner_image_url }}" alt="Önizleme" class="mt-2 h-32 w-full rounded-lg object-cover" />
                         @endif
+                    </div>
+                    <div class="space-y-2 md:col-span-2">
+                        <x-ui.label for="banner_image_url">Kapak Görseli URL (Harici görsel kullanacaksanız)</x-ui.label>
+                        <x-ui.input id="banner_image_url" name="banner_image_url" type="url" value="{{ old('banner_image_url', $campaign->banner_image_url) }}" placeholder="https://..." />
                     </div>
                     <div class="space-y-2 md:col-span-2">
                         <x-ui.label for="meta_image_url">OG / Meta Görsel URL</x-ui.label>

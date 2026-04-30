@@ -1,5 +1,17 @@
 import Foundation
 
+// MARK: - Content
+enum ContentEndpoint: Endpoint {
+    case homepage
+
+    var path: String {
+        switch self {
+        case .homepage: return "/content/homepage"
+        }
+    }
+}
+
+
 // MARK: - Products
 enum ProductsEndpoint: Endpoint {
     case list(page: Int, perPage: Int, category: String?, query: String?)

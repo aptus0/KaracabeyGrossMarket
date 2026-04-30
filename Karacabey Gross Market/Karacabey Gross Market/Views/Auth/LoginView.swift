@@ -3,7 +3,7 @@ import SwiftUI
 struct LoginView: View {
     @StateObject private var viewModel = AuthViewModel()
     @EnvironmentObject private var authManager: AuthManager
-    @State private var email = ""
+    @State private var phone = ""
     @State private var password = ""
     @State private var showRegister = false
     @Environment(\.dismiss) private var dismiss
@@ -27,8 +27,8 @@ struct LoginView: View {
 
                     // Form
                     VStack(spacing: 16) {
-                        KGMTextField(label: "E-posta", placeholder: "ornek@mail.com", text: $email,
-                                     keyboardType: .emailAddress)
+                        KGMTextField(label: "Telefon Numarası", placeholder: "5XX XXX XX XX", text: $phone,
+                                     keyboardType: .phonePad)
                         KGMSecureField(label: "Şifre", placeholder: "En az 8 karakter", text: $password)
                     }
                     .padding(.horizontal)
@@ -44,7 +44,7 @@ struct LoginView: View {
                     // Submit
                     Button {
                         Task {
-                            if await viewModel.login(email: email, password: password) {
+                            if await viewModel.login(phone: phone, password: password) {
                                 dismiss()
                             }
                         }
@@ -62,7 +62,7 @@ struct LoginView: View {
                         .foregroundColor(.white)
                         .cornerRadius(14)
                     }
-                    .disabled(viewModel.isLoading || email.isEmpty || password.isEmpty)
+                    .disabled(viewModel.isLoading || phone.isEmpty || password.isEmpty)
                     .padding(.horizontal)
 
                     // Register link

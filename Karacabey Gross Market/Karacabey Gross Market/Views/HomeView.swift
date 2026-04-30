@@ -23,11 +23,15 @@ struct HomeView: View {
                         ProductsView()
                     }
 
-                // ── Stories (Category bubbles)
-                if !viewModel.categories.isEmpty {
+                // ── Stories (API)
+                if !viewModel.stories.isEmpty {
+                    StoriesRow(stories: viewModel.stories)
+                        .padding(.top, 24)
+                } else if !viewModel.categories.isEmpty {
+                    // Fallback to categories if no stories
                     SectionHeader(title: "Kategoriler", destination: AnyView(CategoriesView()))
                         .padding(.top, 24)
-                    StoriesRow(categories: viewModel.categories)
+                    StoriesRowCategoriesFallback(categories: viewModel.categories)
                         .padding(.top, 8)
                 }
 
@@ -231,9 +235,92 @@ private struct SearchBarButton: View {
     }
 }
 
-// MARK: - Stories Row
+// MARK: - Stories Row (API)
 
 struct StoriesRow: View {
+    let stories: [Story]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 14) {
+                ForEach(stories) { story in
+                    NavigationLink(destination: getDestination(for: story)) {
+                        StoryBubbleAPI(story: story)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
+        }
+    }
+
+    private func getDestination(for story: Story) -> AnyView {
+        if let slug = story.categorySlug, !slug.isEmpty {
+            return AnyView(ProductsView(initialCategory: slug))
+        }
+        return AnyView(ProductsView())
+    }
+}
+
+struct StoryBubbleAPI: View {
+    let story: Story
+
+    var body: some View {
+        VStack(spacing: 6) {
+            ZStack {
+                // Gradient ring
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color(hex: story.gradientStart ?? "#FF7A00"), Color(hex: story.gradientEnd ?? "#FF3300")],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 2.5
+                    )
+                    .frame(width: 66, height: 66)
+
+                Circle()
+                    .fill(Color(.secondarySystemBackground))
+                    .frame(width: 60, height: 60)
+
+                if let imageUrl = story.imageUrl, let url = URL(string: imageUrl) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let img): 
+                            img.resizable().scaledToFill().clipShape(Circle())
+                        default: 
+                            Image(systemName: "photo").foregroundColor(.gray)
+                        }
+                    }
+                    .frame(width: 60, height: 60)
+                } else {
+                    Image(systemName: story.icon ?? "tag.fill")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color(hex: story.gradientStart ?? "#FF7A00"), Color(hex: story.gradientEnd ?? "#FF3300")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+            }
+
+            Text(story.title)
+                .font(.poppins(weight: .medium, size: 10))
+                .foregroundColor(.kgmDarkGray)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .frame(width: 66)
+        }
+    }
+}
+
+// MARK: - Stories Row Fallback (Categories)
+
+struct StoriesRowCategoriesFallback: View {
     let categories: [Category]
 
     var body: some View {

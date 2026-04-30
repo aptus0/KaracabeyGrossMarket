@@ -25,7 +25,17 @@ struct ProductDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(destination: CartView()) { CartBarButton() }
+                HStack {
+                    if let p = viewModel.product {
+                        Button {
+                            Task { await favManager.toggle(p) }
+                        } label: {
+                            Image(systemName: favManager.isFavorite(p.slug) ? "heart.fill" : "heart")
+                                .foregroundColor(favManager.isFavorite(p.slug) ? .red : .primary)
+                        }
+                    }
+                    NavigationLink(destination: CartView()) { CartBarButton() }
+                }
             }
         }
         .task { await viewModel.load(slug: slug) }
@@ -35,143 +45,233 @@ struct ProductDetailView: View {
     private func productContent(_ p: Product) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                // Parallax Image
+                GeometryReader { geo in
+                    let minY = geo.frame(in: .global).minY
+                    let isScrollingDown = minY < 0
+                    let height = isScrollingDown ? 350 : 350 + minY
+                    let offset = isScrollingDown ? -minY : -minY
 
-                // Image
-                productImage(p)
+                    productImage(p)
+                        .frame(width: geo.size.width, height: max(0, height))
+                        .offset(y: offset)
+                }
+                .frame(height: 350)
+                .zIndex(1)
 
-                VStack(alignment: .leading, spacing: 16) {
-                    // Brand + Name
-                    if let brand = p.brand {
-                        Text(brand.uppercased())
-                            .font(.poppins(weight: .medium, size: 12))
-                            .foregroundColor(.kgmGray)
-                    }
-                    Text(p.name)
-                        .font(.poppins(weight: .bold, size: 20))
-                        .foregroundColor(.kgmDarkGray)
-
-                    // Price
-                    HStack(alignment: .bottom, spacing: 8) {
-                        Text(p.displayPrice)
-                            .font(.poppins(weight: .bold, size: 26))
-                            .foregroundColor(.kgmOrange)
-                        if p.hasDiscount, let pct = p.discountPercent {
-                            Text("%\(pct) indirim")
-                                .font(.poppins(weight: .medium, size: 13))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 8).padding(.vertical, 3)
-                                .background(Color.green)
+                // Content
+                VStack(alignment: .leading, spacing: 20) {
+                    // Header Area
+                    VStack(alignment: .leading, spacing: 8) {
+                        if let brand = p.brand {
+                            Text(brand.uppercased())
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundColor(.kgmOrange)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Color.kgmOrange.opacity(0.1))
                                 .cornerRadius(8)
+                        }
+                        
+                        Text(p.name)
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                            .lineLimit(3)
+                        
+                        // Price & Badges
+                        HStack(alignment: .bottom, spacing: 12) {
+                            Text(p.displayPrice)
+                                .font(.system(size: 28, weight: .black, design: .rounded))
+                                .foregroundColor(.primary)
+                            
+                            if p.hasDiscount, let pct = p.discountPercent {
+                                Text("%\(pct) İNDİRİM")
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8).padding(.vertical, 4)
+                                    .background(Color.green)
+                                    .cornerRadius(6)
+                            }
                         }
                     }
 
-                    // Stock badge
-                    Label(p.isInStock ? "Stokta Var" : "Tükendi",
-                          systemImage: p.isInStock ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .font(.poppins(weight: .medium, size: 13))
-                        .foregroundColor(p.isInStock ? .green : .red)
-
                     Divider()
+
+                    // Stock Info
+                    HStack(spacing: 12) {
+                        Circle()
+                            .fill(p.isInStock ? Color.green.opacity(0.2) : Color.red.opacity(0.2))
+                            .frame(width: 40, height: 40)
+                            .overlay(
+                                Image(systemName: p.isInStock ? "checkmark" : "xmark")
+                                    .foregroundColor(p.isInStock ? .green : .red)
+                                    .font(.system(size: 18, weight: .bold))
+                            )
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(p.isInStock ? "Stokta Var" : "Tükendi")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundColor(p.isInStock ? .green : .red)
+                            Text(p.isInStock ? "Hemen teslimata uygun" : "Şu an temin edilemiyor")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(UIColor.secondarySystemBackground))
+                    .cornerRadius(12)
 
                     // Description
                     if let desc = p.description, !desc.isEmpty {
-                        Text(desc)
-                            .font(.poppins(weight: .regular, size: 14))
-                            .foregroundColor(.kgmGray)
-                            .lineSpacing(4)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Ürün Açıklaması")
+                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                            
+                            Text(desc)
+                                .font(.system(size: 15, weight: .regular))
+                                .foregroundColor(.secondary)
+                                .lineSpacing(6)
+                        }
                     }
 
-                    // Category chips
+                    // Categories
                     if let cats = p.categories, !cats.isEmpty {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack {
-                                ForEach(cats) { cat in
-                                    NavigationLink(destination: ProductsView(initialCategory: cat.slug)) {
-                                        Text(cat.name)
-                                            .font(.poppins(weight: .medium, size: 12))
-                                            .padding(.horizontal, 12).padding(.vertical, 6)
-                                            .background(Color.kgmOrange.opacity(0.1))
-                                            .foregroundColor(.kgmOrange)
-                                            .cornerRadius(20)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Kategoriler")
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 10) {
+                                    ForEach(cats) { cat in
+                                        NavigationLink(destination: ProductsView(initialCategory: cat.slug)) {
+                                            Text(cat.name)
+                                                .font(.system(size: 13, weight: .medium))
+                                                .padding(.horizontal, 16)
+                                                .padding(.vertical, 8)
+                                                .background(Color(UIColor.tertiarySystemBackground))
+                                                .foregroundColor(.primary)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 20)
+                                                        .stroke(Color(UIColor.separator), lineWidth: 1)
+                                                )
+                                                .cornerRadius(20)
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-
-                    Divider()
-
-                    // Quantity picker + Add to cart
-                    HStack(spacing: 16) {
-                        // Stepper
-                        HStack(spacing: 0) {
-                            Button { if qty > 1 { qty -= 1 } } label: {
-                                Image(systemName: "minus")
-                                    .frame(width: 36, height: 36)
-                                    .foregroundColor(qty > 1 ? .kgmOrange : .gray)
-                            }
-                            Text("\(qty)")
-                                .font(.poppins(weight: .bold, size: 16))
-                                .frame(width: 40)
-                            Button { qty += 1 } label: {
-                                Image(systemName: "plus")
-                                    .frame(width: 36, height: 36)
-                                    .foregroundColor(.kgmOrange)
-                            }
-                        }
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25)))
-
-                        // Add to cart button
-                        Button {
-                            Task {
-                                await cartManager.addItem(slug: p.slug, quantity: qty)
-                                addedToCart = true
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { addedToCart = false }
-                            }
-                        } label: {
-                            Label(addedToCart ? "Eklendi!" : "Sepete Ekle",
-                                  systemImage: addedToCart ? "checkmark" : "cart.badge.plus")
-                                .font(.poppins(weight: .bold, size: 15))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(addedToCart ? Color.green : Color.kgmOrange)
-                                .foregroundColor(.white)
-                                .cornerRadius(14)
-                                .animation(.easeInOut(duration: 0.2), value: addedToCart)
-                        }
-                        .disabled(!p.isInStock)
-                    }
+                    
+                    Spacer().frame(height: 20) // Bottom padding for sticky bar
                 }
-                .padding()
+                .padding(20)
+                .background(Color(UIColor.systemBackground))
+                .cornerRadius(24, corners: [.topLeft, .topRight])
+                .offset(y: -24)
+                .zIndex(2)
             }
         }
-        .navigationTitle(p.name)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    Task { await favManager.toggle(p) }
-                } label: {
-                    Image(systemName: favManager.isFavorite(p.slug) ? "heart.fill" : "heart")
-                        .foregroundColor(.kgmOrange)
+        .ignoresSafeArea(edges: .top)
+        .safeAreaInset(edge: .bottom) {
+            stickyBottomBar(p)
+        }
+    }
+
+    private func stickyBottomBar(_ p: Product) -> some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 16) {
+                // Quantity Stepper
+                HStack(spacing: 16) {
+                    Button { if qty > 1 { UIImpactFeedbackGenerator(style: .light).impactOccurred(); qty -= 1 } } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(qty > 1 ? .kgmOrange : Color(UIColor.systemGray4))
+                    }
+                    
+                    Text("\(qty)")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .frame(width: 30)
+                    
+                    Button { UIImpactFeedbackGenerator(style: .light).impactOccurred(); qty += 1 } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(.kgmOrange)
+                    }
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(UIColor.secondarySystemBackground))
+                .cornerRadius(30)
+
+                // Add to Cart Button
+                Button {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    Task {
+                        await cartManager.addItem(slug: p.slug, quantity: qty)
+                        withAnimation { addedToCart = true }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            withAnimation { addedToCart = false }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: addedToCart ? "checkmark" : "cart.fill")
+                        Text(addedToCart ? "Eklendi" : "Sepete Ekle")
+                    }
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(addedToCart ? Color.green : (p.isInStock ? Color.kgmOrange : Color.gray))
+                    .foregroundColor(.white)
+                    .cornerRadius(30)
+                    .shadow(color: (addedToCart ? Color.green : Color.kgmOrange).opacity(0.3), radius: 10, y: 5)
+                }
+                .disabled(!p.isInStock || addedToCart)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 20)
+            .background(.ultraThinMaterial)
         }
     }
 
     private func productImage(_ p: Product) -> some View {
         ZStack {
-            Color(UIColor.secondarySystemBackground)
+            Color.white // Bright background for products
             if let urlStr = p.imageUrl, let url = URL(string: urlStr) {
                 AsyncImage(url: url) { phase in
                     switch phase {
-                    case .success(let img): img.resizable().scaledToFit().padding(20)
-                    default: Image(systemName: "photo").font(.system(size: 56)).foregroundColor(.gray)
+                    case .success(let img): 
+                        img.resizable().scaledToFit().padding(40)
+                    case .empty:
+                        ProgressView().tint(.kgmOrange)
+                    default: 
+                        Image(systemName: "photo").font(.system(size: 56)).foregroundColor(Color(UIColor.systemGray4))
                     }
                 }
             } else {
-                Image(systemName: "photo").font(.system(size: 56)).foregroundColor(.gray)
+                Image(systemName: "photo").font(.system(size: 56)).foregroundColor(Color(UIColor.systemGray4))
             }
         }
-        .frame(height: 280)
     }
 }
+
+// Helper for specific corner rounding
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape( RoundedCorner(radius: radius, corners: corners) )
+    }
+}
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        return Path(path.cgPath)
+    }
+}
+

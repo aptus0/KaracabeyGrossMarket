@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\AuthLogController as AdminAuthLogController;
 use App\Http\Controllers\Admin\CampaignController as AdminCampaignController;
+use App\Http\Controllers\Admin\StoryController as AdminStoryController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ErpCariController as AdminErpCariController;
@@ -83,6 +84,7 @@ Route::prefix($adminPrefix)->name('admin.')->middleware('admin.security')->group
             ->only(['index', 'store', 'update', 'destroy'])
             ->parameters(['navigation' => 'navigationItem']);
         Route::resource('campaigns', AdminCampaignController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
+        Route::resource('stories', AdminStoryController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::post('coupons', [AdminCampaignController::class, 'storeCoupon'])->name('coupons.store');
         Route::get('marketing', [AdminMarketingSettingController::class, 'edit'])->name('marketing.edit');
         Route::put('marketing', [AdminMarketingSettingController::class, 'update'])->name('marketing.update');

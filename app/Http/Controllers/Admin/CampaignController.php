@@ -91,6 +91,7 @@ class CampaignController extends Controller
             'slug'             => ['nullable', 'string', 'max:255'],
             'description'      => ['nullable', 'string', 'max:1000'],
             'body'             => ['nullable', 'string'],
+            'banner_image'     => ['nullable', 'file', 'mimes:' . ImageUploadService::MIMES, 'max:' . ImageUploadService::MAX_KB],
             'banner_image_url' => ['nullable', 'url', 'max:500'],
             'meta_image_url'   => ['nullable', 'url', 'max:500'],
             'badge_label'      => ['nullable', 'string', 'max:60'],
@@ -105,7 +106,19 @@ class CampaignController extends Controller
             'seo_description'  => ['nullable', 'string', 'max:500'],
         ]);
 
+        $imagePath = $campaign->image_path;
+        if ($request->hasFile('banner_image')) {
+            $this->images->delete($campaign->image_path);
+            $imagePath = $this->images->store(
+                file: $request->file('banner_image'),
+                folder: 'campaigns',
+                maxWidth: 1200,
+                maxHeight: 630,
+            );
+        }
+
         $validated['slug']       = $validated['slug'] ?: Str::slug($validated['name']);
+        $validated['image_path'] = $imagePath;
         $validated['is_active']  = $request->boolean('is_active');
         $validated['sort_order'] = $validated['sort_order'] ?? 0;
         $validated['color_hex']  = $validated['color_hex'] ?? '#FF7A00';
@@ -114,9 +127,10 @@ class CampaignController extends Controller
             'description' => $validated['seo_description'] ?? $validated['description'] ?? null,
         ];
 
-        unset($validated['seo_title'], $validated['seo_description']);
+        unset($validated['seo_title'], $validated['seo_description'], $validated['banner_image']);
 
         $campaign->update($validated);
+        Cache::forget("tenant:{$campaign->tenant_id}:content:campaigns:v2");
 
         return back()->with('status', 'Kampanya güncellendi.');
     }

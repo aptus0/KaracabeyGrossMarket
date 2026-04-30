@@ -3,7 +3,7 @@ import SwiftUI
 struct RegisterView: View {
     @StateObject private var viewModel = AuthViewModel()
     @State private var name = ""
-    @State private var email = ""
+    @State private var phone = ""
     @State private var password = ""
     @Environment(\.dismiss) private var dismiss
 
@@ -22,7 +22,7 @@ struct RegisterView: View {
 
                 VStack(spacing: 16) {
                     KGMTextField(label: "Ad Soyad", placeholder: "Adınız Soyadınız", text: $name)
-                    KGMTextField(label: "E-posta", placeholder: "ornek@mail.com", text: $email, keyboardType: .emailAddress)
+                    KGMTextField(label: "Telefon Numarası", placeholder: "5XX XXX XX XX", text: $phone, keyboardType: .phonePad)
                     KGMSecureField(label: "Şifre", placeholder: "En az 8 karakter", text: $password)
                 }
                 .padding(.horizontal)
@@ -34,7 +34,7 @@ struct RegisterView: View {
 
                 Button {
                     Task {
-                        if await viewModel.register(name: name, email: email, password: password) {
+                        if await viewModel.register(name: name, phone: phone, password: password) {
                             dismiss()
                         }
                     }
@@ -49,7 +49,7 @@ struct RegisterView: View {
                     .foregroundColor(.white)
                     .cornerRadius(14)
                 }
-                .disabled(viewModel.isLoading || name.isEmpty || email.isEmpty || password.count < 6)
+                .disabled(viewModel.isLoading || name.isEmpty || phone.isEmpty || password.count < 6)
                 .padding(.horizontal)
 
                 Button { dismiss() } label: {

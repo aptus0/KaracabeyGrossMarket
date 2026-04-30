@@ -39,18 +39,18 @@ struct AuthResponse: Codable {
 }
 
 struct LoginRequest: Codable {
-    let email: String
+    let phone: String
     let password: String
 }
 
 struct RegisterRequest: Codable {
     let name: String
-    let email: String
+    let phone: String
     let password: String
     let passwordConfirmation: String
 
     enum CodingKeys: String, CodingKey {
-        case name, email, password
+        case name, phone, password
         case passwordConfirmation = "password_confirmation"
     }
 }

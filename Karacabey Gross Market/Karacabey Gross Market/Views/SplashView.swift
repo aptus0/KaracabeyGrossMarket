@@ -2,35 +2,86 @@ import SwiftUI
 
 struct SplashView: View {
     @Binding var isActive: Bool
-    @State private var scale: CGFloat = 0.7
-    @State private var opacity: Double = 0
+    @State private var iconScale: CGFloat = 0.5
+    @State private var iconOpacity: Double = 0
+    @State private var textOpacity: Double = 0
+    @State private var pulse: Bool = false
 
     var body: some View {
         ZStack {
-            Color.kgmOrange.ignoresSafeArea()
-            VStack(spacing: 12) {
-                Image(systemName: "cart.fill")
-                    .font(.system(size: 72, weight: .bold))
-                    .foregroundColor(.white)
-                    .scaleEffect(scale)
-                    .opacity(opacity)
+            // Premium Gradient Background
+            LinearGradient(
+                gradient: Gradient(colors: [Color.kgmOrange, Color.kgmOrange.opacity(0.8)]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
 
-                Text("Karacabey\nGross Market")
-                    .font(.poppins(weight: .bold, size: 26))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .opacity(opacity)
+            VStack(spacing: 24) {
+                // Animated Icon
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.2))
+                        .frame(width: 140, height: 140)
+                        .scaleEffect(pulse ? 1.2 : 1.0)
+                        .opacity(pulse ? 0 : 1)
+                    
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 100, height: 100)
+                        .shadow(color: Color.black.opacity(0.15), radius: 20, x: 0, y: 10)
+                    
+                    Image(systemName: "basket.fill")
+                        .font(.system(size: 48, weight: .bold))
+                        .foregroundColor(.kgmOrange)
+                }
+                .scaleEffect(iconScale)
+                .opacity(iconOpacity)
 
+                // Brand Text
+                VStack(spacing: 8) {
+                    Text("Karacabey")
+                        .font(.system(size: 32, weight: .black, design: .rounded))
+                        .foregroundColor(.white)
+                    
+                    Text("GROSS MARKET")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.9))
+                        .tracking(2)
+                }
+                .opacity(textOpacity)
+                .offset(y: textOpacity == 1 ? 0 : 20)
+
+                Spacer().frame(height: 40)
+
+                // Subtitle
                 Text("Toptan fiyatına, güvenle alışveriş")
-                    .font(.poppins(weight: .medium, size: 14))
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
                     .foregroundColor(.white.opacity(0.8))
-                    .opacity(opacity)
+                    .opacity(textOpacity)
             }
         }
         .onAppear {
-            withAnimation(.spring(duration: 0.8)) { scale = 1.0; opacity = 1.0 }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
-                withAnimation { isActive = true }
+            // Entrance Animations
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+                iconScale = 1.0
+                iconOpacity = 1.0
+            }
+            
+            withAnimation(.easeOut(duration: 0.6).delay(0.3)) {
+                textOpacity = 1.0
+            }
+            
+            // Pulse Animation
+            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: false).delay(0.6)) {
+                pulse = true
+            }
+            
+            // Transition to Main App
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    isActive = true
+                }
             }
         }
     }

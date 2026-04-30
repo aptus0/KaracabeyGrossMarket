@@ -7,6 +7,7 @@ use App\Models\Campaign;
 use App\Models\HomepageBlock;
 use App\Models\NavigationItem;
 use App\Models\Page;
+use App\Models\Story;
 use App\Support\TenantResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,14 @@ class ContentController extends Controller
         $tenant = $tenants->resolve($request);
         $payload = Cache::remember("tenant:{$tenant->id}:content:homepage:v2", now()->addMinutes(2), function () use ($tenant): array {
             return [
+                'stories' => Story::query()
+                    ->whereBelongsTo($tenant)
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->get()
+                    ->map(fn (Story $story): array => $this->serializeStory($story))
+                    ->values()
+                    ->all(),
                 'blocks' => HomepageBlock::query()
                     ->whereBelongsTo($tenant)
                     ->where('is_active', true)
@@ -237,6 +246,21 @@ class ContentController extends Controller
         }
 
         return $data;
+    }
+
+    private function serializeStory(Story $story): array
+    {
+        return [
+            'id' => $story->id,
+            'title' => $story->title,
+            'subtitle' => $story->subtitle,
+            'image_url' => $story->image_url,
+            'category_slug' => $story->category_slug,
+            'custom_url' => $story->custom_url,
+            'gradient_start' => $story->gradient_start,
+            'gradient_end' => $story->gradient_end,
+            'icon' => $story->icon,
+        ];
     }
 
     private function serializeNavigationItem(NavigationItem $item): array

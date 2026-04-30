@@ -16,7 +16,7 @@
                     <h3 class="font-semibold tracking-tight">Yeni Kampanya Ekle</h3>
                     <p class="text-sm text-muted-foreground mt-1">Kampanya ekledikten sonra /kampanyalar sayfasında görünür.</p>
                 </div>
-                <form action="{{ route('admin.campaigns.store') }}" method="POST">
+                <form action="{{ route('admin.campaigns.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="p-6 grid gap-4 md:grid-cols-2">
                         <div class="space-y-2 md:col-span-2">
@@ -41,7 +41,11 @@
                             <x-ui.textarea id="body" name="body" rows="5" placeholder="Kampanya detayları, kurallar, ürün listeleri..."></x-ui.textarea>
                         </div>
                         <div class="space-y-2 md:col-span-2">
-                            <x-ui.label for="banner_image_url">Kapak Görseli URL</x-ui.label>
+                            <x-ui.label for="banner_image">Kapak Görseli Yükle (Önerilen: 1200x630)</x-ui.label>
+                            <x-ui.input id="banner_image" name="banner_image" type="file" accept=".jpg,.jpeg,.png,.webp" />
+                        </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <x-ui.label for="banner_image_url">Kapak Görseli URL (Harici)</x-ui.label>
                             <x-ui.input id="banner_image_url" name="banner_image_url" type="url" placeholder="https://..." />
                         </div>
                         <div class="space-y-2 md:col-span-2">

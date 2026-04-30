@@ -154,7 +154,7 @@ export function Header({ compact = false }: HeaderProps) {
             type="button"
             className="header-action header-action--cart relative"
             aria-label="Sepet"
-            aria-expanded={isCartOpen ? "true" : "false"}
+            aria-expanded={isCartOpen}
             aria-haspopup="dialog"
             onClick={openCartSheet}
           >
@@ -291,7 +291,7 @@ function HeaderAccountLink({
       <button
         type="button"
         className="header-account-button header-account-button--active header-action--desktop-only"
-        aria-expanded={isOpen ? "true" : "false"}
+        aria-expanded={isOpen}
         aria-haspopup="true"
         onClick={() => setIsOpen((prev) => !prev)}
       >
@@ -358,7 +358,7 @@ function HeaderDrawer({
   onClose,
 }: HeaderDrawerProps) {
   return (
-    <div className={`header-drawer header-drawer--menu ${isOpen ? "is-open" : ""}`} aria-hidden={!isOpen}>
+    <div className={`header-drawer header-drawer--menu ${isOpen ? "is-open" : ""}`} aria-hidden={!isOpen || undefined}>
       <button
         type="button"
         className="header-drawer__overlay"
