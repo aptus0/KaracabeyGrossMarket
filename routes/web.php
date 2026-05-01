@@ -25,17 +25,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function (Request $request) {
+    $storefrontUrl = rtrim((string) config('commerce.domains.storefront', '/'), '/');
+
     if (app()->environment(['local', 'testing'])) {
         $host = $request->getHost();
 
         if ($host === 'localhost' || filter_var($host, FILTER_VALIDATE_IP)) {
-            $redirectHost = str_contains($host, ':') ? "[{$host}]" : $host;
-
-            return redirect()->away("http://{$redirectHost}:3000");
+            return redirect()->away($storefrontUrl ?: '/');
         }
     }
-
-    $storefrontUrl = rtrim((string) config('commerce.domains.storefront', '/'), '/');
 
     return redirect()->away($storefrontUrl ?: '/');
 })->name('storefront.redirect');

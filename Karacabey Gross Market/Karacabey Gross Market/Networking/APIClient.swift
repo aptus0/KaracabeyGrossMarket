@@ -27,14 +27,17 @@ final class AuthManager: ObservableObject {
 
     @Published var token: String? {
         didSet {
-            if let t = token { UserDefaults.standard.set(t, forKey: "kgm_token") }
-            else              { UserDefaults.standard.removeObject(forKey: "kgm_token") }
+            if let t = token {
+                _ = KeychainManager.shared.save(t, for: "kgm_token")
+            } else {
+                _ = KeychainManager.shared.delete("kgm_token")
+            }
         }
     }
     @Published var currentUser: User?
 
     private init() {
-        self.token = UserDefaults.standard.string(forKey: "kgm_token")
+        self.token = KeychainManager.shared.retrieve("kgm_token")
     }
 
     var isLoggedIn: Bool { token != nil }
@@ -47,17 +50,28 @@ final class AuthManager: ObservableObject {
 
 // MARK: - APIClient
 
-// Bypasses SSL validation for local .test domains during development
-private final class DevSessionDelegate: NSObject, URLSessionDelegate {
+private final class SessionDelegate: NSObject, URLSessionDelegate {
     func urlSession(_ session: URLSession,
                     didReceive challenge: URLAuthenticationChallenge,
                     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-              let trust = challenge.protectionSpace.serverTrust else {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust else {
             completionHandler(.performDefaultHandling, nil)
             return
         }
-        completionHandler(.useCredential, URLCredential(trust: trust))
+
+        #if DEBUG
+        if challenge.protectionSpace.host.hasSuffix(".test") {
+            guard let trust = challenge.protectionSpace.serverTrust else {
+                completionHandler(.performDefaultHandling, nil)
+                return
+            }
+            completionHandler(.useCredential, URLCredential(trust: trust))
+        } else {
+            completionHandler(.performDefaultHandling, nil)
+        }
+        #else
+        completionHandler(.performDefaultHandling, nil)
+        #endif
     }
 }
 
@@ -65,7 +79,7 @@ final class APIClient {
     static let shared = APIClient()
     private let session: URLSession
     private init() {
-        let delegate = DevSessionDelegate()
+        let delegate = SessionDelegate()
         session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
     }
 

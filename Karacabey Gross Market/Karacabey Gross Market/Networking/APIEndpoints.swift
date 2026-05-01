@@ -197,3 +197,63 @@ enum AddressEndpoint: Endpoint {
         }
     }
 }
+
+// MARK: - Payment
+enum PaymentEndpoint: Endpoint {
+    case checkout(CheckoutRequest)
+    case status(paymentId: Int)
+    case refund(paymentId: Int, RefundRequest)
+
+    var path: String {
+        switch self {
+        case .checkout:           return "/checkout"
+        case .status(let id):     return "/payments/\(id)/status"
+        case .refund(let id, _):  return "/payments/\(id)/refunds"
+        }
+    }
+
+    var method: String {
+        switch self {
+        case .checkout:  return "POST"
+        case .status:    return "GET"
+        case .refund:    return "POST"
+        }
+    }
+
+    var body: Data? {
+        switch self {
+        case .checkout(let r): return try? JSONEncoder().encode(r)
+        case .refund(_, let r): return try? JSONEncoder().encode(r)
+        default:               return nil
+        }
+    }
+}
+
+// MARK: - Request/Response Models
+struct CheckoutRequest: Codable {
+    let customerName: String
+    let customerEmail: String
+    let customerPhone: String
+    let shippingCity: String
+    let shippingDistrict: String
+    let shippingAddress: String
+
+    enum CodingKeys: String, CodingKey {
+        case customerName = "customer_name"
+        case customerEmail = "customer_email"
+        case customerPhone = "customer_phone"
+        case shippingCity = "shipping_city"
+        case shippingDistrict = "shipping_district"
+        case shippingAddress = "shipping_address"
+    }
+}
+
+struct CheckoutResponse: Codable {
+    let token: String
+    let order: Order
+}
+
+struct RefundRequest: Codable {
+    let amount: Int
+    let reason: String?
+}

@@ -1,32 +1,94 @@
 import SwiftUI
-import WebKit
 
 struct CheckoutView: View {
     @EnvironmentObject private var authManager: AuthManager
-    // Web checkout URL – aynı backend'in storefront checkout sayfası
-    private var checkoutURL: URL {
-        let base = APIClient.shared.baseURL
-            .replacingOccurrences(of: "/api/v1", with: "")
-        return URL(string: "\(base)/checkout") ?? URL(string: "http://karacabey-gross-market.test/checkout")!
-    }
+    @EnvironmentObject private var cartManager: CartManager
+    @StateObject private var viewModel = CheckoutViewModel()
+    @State private var showPaymentWebView = false
+    @Environment(\.dismiss) var dismiss
 
     var body: some View {
-        WebView(url: checkoutURL)
-            .navigationTitle("Sipariş Özeti")
+        NavigationStack {
+            Form {
+                Section("Kişisel Bilgiler") {
+                    TextField("Ad Soyad", text: $viewModel.customerName)
+                        .textContentType(.name)
+
+                    TextField("E-posta", text: $viewModel.customerEmail)
+                        .textContentType(.emailAddress)
+                        .keyboardType(.emailAddress)
+
+                    TextField("Telefon", text: $viewModel.customerPhone)
+                        .textContentType(.telephoneNumber)
+                        .keyboardType(.phonePad)
+                }
+
+                Section("Teslimat Adresi") {
+                    TextField("Şehir", text: $viewModel.shippingCity)
+
+                    TextField("İlçe", text: $viewModel.shippingDistrict)
+
+                    TextField("Adres", text: $viewModel.shippingAddress)
+                        .lineLimit(3, reservesSpace: true)
+                }
+
+                Section("Sipariş Özeti") {
+                    if let cart = cartManager.cart {
+                        summaryRow("Ara Toplam", value: cart.formattedSubtotal)
+                        if cart.discountCents > 0 {
+                            summaryRow("İndirim", value: "-\(cart.formattedDiscount)", color: .green)
+                        }
+                        Divider()
+                        summaryRow("Toplam", value: cart.formattedTotal, bold: true)
+                    }
+                }
+
+                if let err = viewModel.errorMessage {
+                    Section {
+                        Text(err)
+                            .font(.poppins(weight: .regular, size: 13))
+                            .foregroundColor(.red)
+                    }
+                }
+
+                Section {
+                    Button(action: {
+                        Task {
+                            if await viewModel.initiateCheckout() {
+                                showPaymentWebView = true
+                            }
+                        }
+                    }) {
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .frame(maxWidth: .infinity, alignment: .center)
+                        } else {
+                            Text("Ödemeye Geç")
+                                .frame(maxWidth: .infinity)
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .listRowBackground(Color.kgmOrange)
+                    .disabled(viewModel.isLoading)
+                }
+            }
+            .navigationTitle("Sipariş Tamamla")
             .navigationBarTitleDisplayMode(.inline)
-            .ignoresSafeArea(edges: .bottom)
-    }
-}
-
-// MARK: - WKWebView wrapper
-struct WebView: UIViewRepresentable {
-    let url: URL
-
-    func makeUIView(context: Context) -> WKWebView {
-        let wv = WKWebView()
-        wv.load(URLRequest(url: url))
-        return wv
+            .navigationDestination(isPresented: $showPaymentWebView) {
+                if let response = viewModel.checkoutResponse {
+                    PaymentWebView(token: response.token, onDismiss: {
+                        showPaymentWebView = false
+                    })
+                }
+            }
+        }
     }
 
-    func updateUIView(_ uiView: WKWebView, context: Context) {}
+    private func summaryRow(_ label: String, value: String, color: Color = .kgmDarkGray, bold: Bool = false) -> some View {
+        HStack {
+            Text(label).font(.poppins(weight: bold ? .bold : .regular, size: 14))
+            Spacer()
+            Text(value).font(.poppins(weight: bold ? .bold : .medium, size: 14)).foregroundColor(color)
+        }
+    }
 }

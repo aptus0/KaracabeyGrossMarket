@@ -140,7 +140,7 @@ struct ProductDetailView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Kategoriler")
                                 .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            
+
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 10) {
                                     ForEach(cats) { cat in
@@ -162,7 +162,57 @@ struct ProductDetailView: View {
                             }
                         }
                     }
-                    
+
+                    // Reviews Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Değerlendirmeler")
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            Spacer()
+                            NavigationLink(destination: ProductReviewsView(productSlug: p.slug)) {
+                                HStack(spacing: 4) {
+                                    Text("Tümü")
+                                        .font(.system(size: 12, weight: .semibold))
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 10, weight: .semibold))
+                                }
+                                .foregroundColor(.kgmOrange)
+                            }
+                        }
+
+                        HStack(spacing: 8) {
+                            VStack(alignment: .center, spacing: 4) {
+                                Text("4.5")
+                                    .font(.system(size: 20, weight: .bold))
+                                    .foregroundColor(.kgmOrange)
+                                HStack(spacing: 2) {
+                                    ForEach(0..<5, id: \.self) { i in
+                                        Image(systemName: i < 4 ? "star.fill" : "star")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(.kgmOrange)
+                                    }
+                                }
+                            }
+                            .frame(width: 60)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("127 Değerlendirme")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.primary)
+                                NavigationLink(destination: ProductReviewsView(productSlug: p.slug)) {
+                                    Text("Değerlendirme Yap")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.kgmOrange)
+                                }
+                            }
+
+                            Spacer()
+                        }
+                        .padding()
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .cornerRadius(10)
+                    }
+
                     Spacer().frame(height: 20) // Bottom padding for sticky bar
                 }
                 .padding(20)

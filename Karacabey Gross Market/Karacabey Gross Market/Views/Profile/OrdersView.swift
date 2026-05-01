@@ -22,7 +22,7 @@ struct OrdersView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List(viewModel.orders) { order in
-                    NavigationLink(destination: OrderDetailView(order: order)) {
+                    NavigationLink(destination: OrderTrackingView(order: order)) {
                         OrderRow(order: order)
                     }
                 }

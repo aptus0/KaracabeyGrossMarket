@@ -5,13 +5,14 @@ struct ProductsView: View {
 
     @StateObject private var viewModel = ProductsViewModel()
     @State private var searchText = ""
+    @State private var showFilters = false
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
 
     var body: some View {
         VStack(spacing: 0) {
-            // Search bar
-            HStack {
+            // Search bar & Filter
+            HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundColor(.kgmGray)
                 TextField("Ürün ara…", text: $searchText)
                     .font(.poppins(weight: .regular, size: 15))
@@ -21,12 +22,21 @@ struct ProductsView: View {
                         Image(systemName: "xmark.circle.fill").foregroundColor(.gray)
                     }
                 }
+                Divider()
+                    .frame(height: 24)
+                Button(action: { showFilters = true }) {
+                    Image(systemName: "slider.horizontal.3")
+                        .foregroundColor(.kgmOrange)
+                }
             }
             .padding(10)
             .background(Color(UIColor.secondarySystemBackground))
             .cornerRadius(12)
             .padding(.horizontal)
             .padding(.vertical, 8)
+            .sheet(isPresented: $showFilters) {
+                FilterSheetView(viewModel: viewModel, isPresented: $showFilters)
+            }
 
             Group {
                 if viewModel.isLoading && viewModel.products.isEmpty {

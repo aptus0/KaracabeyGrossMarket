@@ -20,7 +20,7 @@ struct HomeView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
                     .navigationDestination(isPresented: $navigateToSearch) {
-                        ProductsView()
+                        SearchView()
                     }
 
                 // ── Stories (API)

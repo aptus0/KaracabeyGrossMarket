@@ -49,7 +49,7 @@ services:
     container_name: kgm-node
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - ./resources/js:/app
       - /app/node_modules
