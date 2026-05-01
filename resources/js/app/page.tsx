@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { AdvertisingBanners } from "@/app/_components/AdvertisingBanners";
-import { HomeCarousel } from "@/app/_components/HomeCarousel";
 import { MobileCatalogRedirect } from "@/app/_components/MobileCatalogRedirect";
 import { SeoHead } from "@/app/_components/SeoHead";
-import { TrustBar } from "@/app/_components/TrustBar";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
 import { ShowroomSection } from "@/app/_components/ShowroomSection";
-import { BrandMarquee } from "@/app/_components/BrandMarquee";
-import { buildMetadata } from "@/lib/seo";
+import { TrustBar } from "@/app/_components/TrustBar";
+import { CategoryNavigation } from "@/app/_components/CategoryNavigation";
+import { PromoCampaignCards } from "@/app/_components/PromoCampaignCards";
+import { HeroSlider } from "@/app/_components/HeroSlider";
+import { buildMetadata, siteUrl } from "@/lib/seo";
 import {
   fetchFeaturedStorefrontProducts,
   fetchStorefrontCategories,
@@ -25,7 +25,7 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "GroceryStore",
   name: "Karacabey Gross Market",
-  url: "https://karacabeygrossmarket.com",
+  url: siteUrl,
   areaServed: "Karacabey",
   paymentAccepted: "Credit Card, Debit Card",
 };
@@ -36,66 +36,40 @@ export default async function Home() {
     fetchStorefrontCategories(),
   ]);
 
-  // Vitrinler için ürünleri sanal olarak bölüyoruz (Gerçekte API'den özel endpointler ile çekilebilir)
-  const weeklyProducts = featuredProducts.slice(0, 4);
-  const bestSellers = featuredProducts.slice(4, 8);
-  const cosmeticProducts = featuredProducts.slice(8, 12);
+  const weeklyProducts = featuredProducts.slice(0, 5);
 
   return (
     <GuestLayout>
       <MobileCatalogRedirect />
       <SeoHead data={jsonLd} />
 
-      <main className="min-h-screen bg-[#f3f6f8]">
-        {/* Hero Slider */}
-        <div className="relative">
-          <HomeCarousel />
-          {/* Subtle bottom glass overlay to blend with the background */}
-          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#f3f6f8] to-transparent z-10 pointer-events-none" />
-        </div>
+      <main className="min-h-screen bg-white">
+        {/* Hero Slider - Geniş ve Prominent */}
+        <HeroSlider />
 
-        <TrustBar />
+        {/* Category Navigation Grid */}
+        <CategoryNavigation categories={categories} />
 
-        <div className="max-w-[1120px] mx-auto px-4 md:px-6 relative z-20 -mt-6">
-          {/* Showroom 1: Haftanın Ürünleri */}
-          {weeklyProducts.length > 0 && (
-            <ShowroomSection 
-              title="Haftanın Fırsatları" 
-              subtitle="Bu haftaya özel indirimli fiyatları kaçırmayın"
+        {/* Öne Çıkan Ürünler Section */}
+        {weeklyProducts.length > 0 && (
+          <div className="max-w-[1120px] mx-auto px-4 md:px-6 py-12">
+            <ShowroomSection
+              title="Öne Çıkan Ürünler"
+              subtitle=""
               products={weeklyProducts}
               theme="default"
-              actionLink="/products?q=kampanya"
+              actionLink="/products"
+              actionText="Tümünü Gör"
             />
-          )}
+          </div>
+        )}
 
-          <AdvertisingBanners />
+        {/* Promo Campaign Cards - 3 kartlı kampanya bölümü */}
+        <PromoCampaignCards />
 
-          {/* Showroom 2: Çok Satanlar */}
-          {bestSellers.length > 0 && (
-            <ShowroomSection 
-              title="Çok Satan Ürünler" 
-              subtitle="Müşterilerimizin en çok tercih ettiği ürünler"
-              products={bestSellers}
-              theme="bestseller"
-              actionLink="/products?q=populer"
-            />
-          )}
-        </div>
-
-        {/* Markalar Kayan Yazı */}
-        <BrandMarquee />
-
-        <div className="max-w-[1120px] mx-auto px-4 md:px-6">
-          {/* Showroom 3: Cilt & Kozmetik */}
-          {cosmeticProducts.length > 0 && (
-            <ShowroomSection 
-              title="Cilt ve Kozmetik" 
-              subtitle="Güzelliğinize değer katan seçkin markalar"
-              products={cosmeticProducts}
-              theme="cosmetics"
-              actionLink="/categories/kozmetik"
-            />
-          )}
+        {/* Trust Bar */}
+        <div className="bg-gray-50 py-12">
+          <TrustBar />
         </div>
       </main>
     </GuestLayout>

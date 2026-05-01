@@ -6,6 +6,7 @@ import { GuestLayout } from "@/app/_layouts/GuestLayout";
 import { CouponCopyButton } from "@/app/_components/CouponCopyButton";
 import { SeoHead } from "@/app/_components/SeoHead";
 import { buildMetadata, siteUrl } from "@/lib/seo";
+import { resolveInternalApiOrigin } from "@/lib/server-config";
 import {
   Tag,
   Clock,
@@ -48,11 +49,7 @@ type CampaignDetail = {
 // ─── Data Fetching ────────────────────────────────────────────────────────────
 
 function resolveBaseUrl() {
-  return (
-    process.env.NEXT_PUBLIC_API_URL ??
-    process.env.APP_URL ??
-    "http://127.0.0.1:8000"
-  );
+  return resolveInternalApiOrigin();
 }
 
 async function fetchCampaign(slug: string): Promise<CampaignDetail | null> {

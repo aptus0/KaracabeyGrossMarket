@@ -56,6 +56,11 @@ services:
     environment:
       NODE_ENV: development
       HOSTNAME: 0.0.0.0
+      INTERNAL_API_URL: http://web
+      API_INTERNAL_URL: http://web
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3001
+      NEXT_PUBLIC_CDN_URL: https://cdn.karacabeygrossmarket.com
     command: npm run dev
     networks:
       - kgm-network

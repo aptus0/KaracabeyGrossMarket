@@ -50,6 +50,28 @@ function normalizeOrigin(value: string | null | undefined) {
   }
 }
 
+function toRemotePattern(origin: string | null | undefined) {
+  const normalized = normalizeOrigin(origin);
+
+  if (!normalized) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(normalized);
+
+    return {
+      protocol: parsed.protocol.replace(":", "") as "http" | "https",
+      hostname: parsed.hostname,
+      port: parsed.port || undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+type RemotePattern = NonNullable<ReturnType<typeof toRemotePattern>>;
+
 const internalApiOrigin = process.env.INTERNAL_API_URL
   ?? process.env.API_INTERNAL_URL
   ?? readLaravelEnvValue("API_INTERNAL_URL")
@@ -74,6 +96,17 @@ const cdnOrigin = process.env.NEXT_PUBLIC_CDN_URL
   ?? readLaravelEnvValue("CDN_URL")
   ?? "";
 
+const remotePatterns: RemotePattern[] = [
+  {
+    protocol: "https",
+    hostname: "images.unsplash.com",
+    port: undefined,
+  },
+  ...[storefrontOrigin, publicApiOrigin, cdnOrigin]
+    .map(toRemotePattern)
+    .filter((pattern): pattern is RemotePattern => pattern !== null),
+];
+
 const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
@@ -85,12 +118,7 @@ const nextConfig: NextConfig = {
   },
   assetPrefix: process.env.NODE_ENV === "production" && cdnOrigin ? normalizeOrigin(cdnOrigin) : undefined,
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
-    ],
+    remotePatterns,
   },
   async rewrites() {
     return [

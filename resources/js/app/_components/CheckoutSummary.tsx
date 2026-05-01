@@ -52,167 +52,160 @@ export function CheckoutSummary({
 
   if (resolvedItems.length === 0) {
     return (
-      <section className={cn("checkout-summary rounded-[24px] border border-[#E4E7EB] bg-white p-6", className)}>
+      <section className={cn("rounded-2xl border border-[#F1F5F9] bg-white p-6", className)}>
         <div className="grid gap-3 text-center">
-          <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#FFF1E1] text-[#FF7A00]">
-            <ShoppingBag size={22} />
+          <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#FFF8F0] text-[#FF7A00]">
+            <ShoppingBag size={20} />
           </div>
           <div className="space-y-1">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#FF7A00]">Sepet</p>
-            <h2 className="text-xl font-black text-[#2B2F36]">Sepetiniz henüz boş</h2>
+            <h2 className="text-lg font-black text-[#2B2F36]">Sepetiniz Boş</h2>
+            <p className="text-sm text-[#64748B]">Henüz ürün eklememişsiniz.</p>
           </div>
-          <p className="text-sm leading-6 text-[#6B7177]">
-            Ürün eklediğiniz anda mini-cart ve checkout özeti burada senkron şekilde görünecek.
-          </p>
         </div>
       </section>
     );
   }
 
   return (
-    <section className={cn("checkout-summary rounded-[24px] border border-[#E4E7EB] bg-white p-6", className)}>
-      <div className="mb-5 grid gap-1">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-[#FF7A00]">Sepet</p>
-        <h2 className="text-2xl font-black text-[#2B2F36]">{title}</h2>
-        <p className="text-sm leading-6 text-[#6B7177]">{description}</p>
+    <section className={cn("grid gap-4", className)}>
+      {/* ── HEADER ── */}
+      <div className="px-1">
+        <h2 className="text-lg font-black text-[#2B2F36]">{title}</h2>
+        <p className="text-xs font-semibold text-[#64748B]">{description}</p>
       </div>
 
-      <ul className="grid gap-4">
+      {/* ── ITEM LIST ── */}
+      <ul className="grid gap-2">
         {resolvedItems.map((item) => (
           <li
             key={item.id}
-            className="grid gap-3 rounded-2xl border border-[#EEF1F4] bg-[#FCFDFE] p-4"
+            className="group relative flex items-center gap-3 rounded-xl border border-[#F1F5F9] bg-white p-2.5 transition hover:border-[#FF7A00]/20 hover:bg-[#FFF8F0]/30"
           >
-            <div className="flex items-start gap-3">
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#EEF1F4] bg-white">
-                {item.product.image_url ? (
-                  <Image
-                    src={item.product.image_url}
-                    alt={item.product.name}
-                    fill
-                    sizes="64px"
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-xs font-black text-[#6B7177]">
-                    KGM
-                  </div>
-                )}
+            {/* Image Container */}
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-[#F1F5F9] bg-white">
+              {item.product.image_url ? (
+                <Image
+                  src={item.product.image_url}
+                  alt={item.product.name}
+                  fill
+                  sizes="56px"
+                  className="object-contain p-1 transition duration-300 group-hover:scale-110"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center bg-[#F8FAFC] text-[10px] font-black text-[#94A3B8]">
+                  KGM
+                </div>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="grid gap-0.5">
+                  <h3 className="line-clamp-1 text-xs font-black text-[#2B2F36]">
+                    {item.product.name}
+                  </h3>
+                  <p className="text-[10px] font-bold text-[#64748B]">
+                    {item.product.brand ?? "Karacabey Gross"}
+                  </p>
+                </div>
+                <span className="text-xs font-black text-[#2B2F36]">
+                  {formatCartMoney(item.line_total_cents)}
+                </span>
               </div>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <strong className="line-clamp-2 text-sm font-black text-[#2B2F36]">
-                      {item.product.name}
-                    </strong>
-                    <p className="text-xs font-semibold text-[#6B7177]">
-                      {item.product.brand ?? "Karacabey Gross Market"}
-                    </p>
-                  </div>
-                  <strong className="text-sm font-black text-[#2B2F36]">
-                    {formatCartMoney(item.line_total_cents)}
-                  </strong>
-                </div>
-
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                  <span className="rounded-full bg-[#FFF3E6] px-3 py-1 text-xs font-black uppercase tracking-[0.1em] text-[#FF7A00]">
-                    {item.quantity} adet
+              {/* Controls */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#FF7A00]">
+                    {item.quantity} Adet
                   </span>
-
-                  {editable ? (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E4E7EB] bg-white text-[#2B2F36] transition hover:bg-[#FFF8F0]"
-                        onClick={() => void handleQuantityChange(item.id, Math.max(1, item.quantity - 1))}
-                        disabled={status === "updating" || item.quantity <= 1}
-                        aria-label={`${item.product.name} miktarını azalt`}
-                      >
-                        <Minus size={15} />
-                      </button>
-                      <span className="min-w-8 text-center text-sm font-black text-[#2B2F36]">
-                        {item.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E4E7EB] bg-white text-[#2B2F36] transition hover:bg-[#FFF8F0]"
-                        onClick={() => void handleQuantityChange(item.id, Math.min(99, item.quantity + 1))}
-                        disabled={status === "updating" || item.quantity >= 99}
-                        aria-label={`${item.product.name} miktarını arttır`}
-                      >
-                        <Plus size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#F3D4CF] bg-white text-[#A32A18] transition hover:bg-[#FFF3F1]"
-                        onClick={() => void handleItemRemoval(item.id)}
-                        disabled={status === "updating"}
-                        aria-label={`${item.product.name} ürününü sil`}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  ) : null}
                 </div>
+
+                {editable && (
+                  <div className="flex items-center gap-1 rounded-lg border border-[#F1F5F9] bg-white p-0.5">
+                    <button
+                      type="button"
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#2B2F36] transition hover:bg-[#F1F5F9] disabled:opacity-30"
+                      onClick={() => void handleQuantityChange(item.id, item.quantity - 1)}
+                      disabled={status === "updating" || item.quantity <= 1}
+                    >
+                      <Minus size={12} strokeWidth={3} />
+                    </button>
+                    <span className="min-w-6 text-center text-[11px] font-black text-[#2B2F36]">
+                      {item.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#2B2F36] transition hover:bg-[#F1F5F9] disabled:opacity-30"
+                      onClick={() => void handleQuantityChange(item.id, item.quantity + 1)}
+                      disabled={status === "updating"}
+                    >
+                      <Plus size={12} strokeWidth={3} />
+                    </button>
+                    <div className="mx-1 h-3 w-[1px] bg-[#F1F5F9]" />
+                    <button
+                      type="button"
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#EF4444] transition hover:bg-[#FEF2F2]"
+                      onClick={() => void handleItemRemoval(item.id)}
+                      disabled={status === "updating"}
+                    >
+                      <Trash2 size={12} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </li>
         ))}
       </ul>
 
-      {editable && !items ? (
-        <div className="mt-4 border-t border-[#EEF1F4] pt-4">
+      {/* ── COUPON & TOTALS ── */}
+      <div className="grid gap-3 rounded-2xl border border-[#F1F5F9] bg-[#F8FAFC]/50 p-4">
+        {editable && !items && (
           <CouponInput
             appliedCoupon={resolvedCoupon}
             onApply={applyCoupon}
             onRemove={clearCoupon}
             disabled={status === "updating"}
           />
-        </div>
-      ) : null}
+        )}
 
-      {error ? (
-        <p className="mt-4 rounded-2xl border border-[#F3D4CF] bg-[#FFF5F3] px-4 py-3 text-sm font-semibold text-[#A32A18]">
-          {error}
-        </p>
-      ) : null}
-
-      <div className="mt-4 grid gap-3 rounded-2xl border border-[#EEF1F4] bg-[#FAFBFC] p-4">
-        <div className="flex items-center justify-between text-sm text-[#6B7177]">
-          <span>Ara Toplam</span>
-          <strong className="font-black text-[#2B2F36]">{formatCartMoney(resolvedSubtotal)}</strong>
-        </div>
-        {discountCents > 0 ? (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-[#16A34A]">
-              İndirim
-              {resolvedCoupon ? ` (${resolvedCoupon.code})` : ""}
-            </span>
-            <strong className="font-black text-[#16A34A]">
-              -{formatCartMoney(discountCents)}
-            </strong>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#64748B]">
+            <span>Ara Toplam</span>
+            <span className="font-black text-[#2B2F36]">{formatCartMoney(resolvedSubtotal)}</span>
           </div>
-        ) : null}
-        <div className="checkout-summary__total flex items-center justify-between border-t border-[#E4E7EB] pt-3">
-          <span className="text-sm font-bold text-[#6B7177]">Toplam</span>
-          <strong className="text-xl font-black text-[#2B2F36]">{formatCartMoney(resolvedTotal)}</strong>
+          {discountCents > 0 && (
+            <div className="flex items-center justify-between text-xs font-semibold text-[#16A34A]">
+              <span>İndirim</span>
+              <span className="font-black">-{formatCartMoney(discountCents)}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between border-t border-[#F1F5F9] pt-2">
+            <span className="text-sm font-black text-[#2B2F36]">Toplam</span>
+            <span className="text-lg font-black text-[#FF7A00]">{formatCartMoney(resolvedTotal)}</span>
+          </div>
         </div>
       </div>
 
-      {editable ? (
-        <div className="mt-4">
-          <Button
-            type="button"
-            variant="secondary"
-            className="h-11 w-full rounded-xl"
-            onClick={() => useCartStore.getState().clearCart()}
-            disabled={status === "updating"}
-          >
-            Sepeti Temizle
-          </Button>
-        </div>
-      ) : null}
+      {editable && (
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-10 w-full rounded-xl text-xs font-bold text-[#64748B] hover:bg-[#FEF2F2] hover:text-[#EF4444]"
+          onClick={() => useCartStore.getState().clearCart()}
+          disabled={status === "updating"}
+        >
+          Sepeti Temizle
+        </Button>
+      )}
+
+      {error && (
+        <p className="rounded-xl bg-[#FEF2F2] px-4 py-3 text-[11px] font-bold text-[#EF4444]">
+          {error}
+        </p>
+      )}
     </section>
   );
 }

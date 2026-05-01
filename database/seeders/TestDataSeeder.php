@@ -12,9 +12,10 @@ class TestDataSeeder extends Seeder
     {
         // Create a test user
         $user = User::firstOrCreate(
-            ['email' => 'test@example.com'],
+            ['phone' => '05551234567'],
             [
                 'name' => 'Test User',
+                'email' => 'test@example.com',
                 'password' => bcrypt('password123'),
             ]
         );

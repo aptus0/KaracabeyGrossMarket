@@ -145,14 +145,24 @@
 
                             <div class="flex flex-col gap-2 xl:items-end">
                                 <x-ui.button type="submit" class="w-full xl:w-auto">Kaydet</x-ui.button>
-                                <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" onsubmit="return confirm('Bu kategoriyi silmek istediğinize emin misiniz?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="inline-flex h-10 items-center justify-center rounded-lg border border-rose-200 px-4 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">
-                                        Kaldır
-                                    </button>
-                                </form>
+                                <button
+                                    type="submit"
+                                    form="delete-category-{{ $category->id }}"
+                                    class="inline-flex h-10 items-center justify-center rounded-lg border border-rose-200 px-4 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+                                >
+                                    Kaldır
+                                </button>
                             </div>
+                        </form>
+                        <form
+                            id="delete-category-{{ $category->id }}"
+                            action="{{ route('admin.categories.destroy', $category) }}"
+                            method="POST"
+                            class="hidden"
+                            onsubmit="return confirm('Bu kategoriyi silmek istediğinize emin misiniz?')"
+                        >
+                            @csrf
+                            @method('DELETE')
                         </form>
                     @empty
                         <div class="p-10 text-center text-sm text-muted-foreground">Kategori bulunamadı.</div>

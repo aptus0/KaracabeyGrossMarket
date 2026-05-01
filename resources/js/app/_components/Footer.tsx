@@ -101,7 +101,7 @@ export function Footer({ compact = false }: FooterProps) {
   }));
 
   return (
-    <footer className={compact ? "site-footer site-footer--compact" : "site-footer"}>
+    <footer className={`${compact ? "site-footer site-footer--compact" : "site-footer"} hidden md:block`}>
       <div className={`mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-12 ${compact ? "py-10" : "py-14"}`}>
         <div className="grid gap-6 lg:gap-8">
 

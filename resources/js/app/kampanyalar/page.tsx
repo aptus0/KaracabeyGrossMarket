@@ -4,6 +4,7 @@ import Image from "next/image";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
 import { SeoHead } from "@/app/_components/SeoHead";
 import { buildMetadata, siteUrl } from "@/lib/seo";
+import { resolveInternalApiOrigin } from "@/lib/server-config";
 import { Tag, Clock, ChevronRight, Zap } from "lucide-react";
 
 export const metadata: Metadata = buildMetadata({
@@ -37,10 +38,7 @@ type Campaign = {
 };
 
 async function fetchCampaigns(): Promise<Campaign[]> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ??
-    process.env.APP_URL ??
-    "http://127.0.0.1:8000";
+  const baseUrl = resolveInternalApiOrigin();
 
   try {
     const res = await fetch(`${baseUrl}/api/v1/content/campaigns`, {

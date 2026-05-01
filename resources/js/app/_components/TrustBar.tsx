@@ -1,16 +1,16 @@
-import { Clock, CreditCard, MapPin, RotateCcw } from "lucide-react";
+import { Clock, CreditCard, MapPin, RotateCcw, Percent } from "lucide-react";
 
 const trustItems = [
   {
     Icon: Clock,
-    title: "Aynı Gün Teslimat",
-    description: "Karacabey içi siparişler",
+    title: "Hızlı Teslimat",
+    description: "Aynı gün teslimat",
     color: "trust-bar__item--orange",
   },
   {
     Icon: CreditCard,
     title: "Güvenli Ödeme",
-    description: "256-bit SSL koruması",
+    description: "256 bit SSL ile korunur",
     color: "trust-bar__item--blue",
   },
   {
@@ -22,8 +22,14 @@ const trustItems = [
   {
     Icon: RotateCcw,
     title: "Kolay İade",
-    description: "7 gün iade garantisi",
+    description: "7 gün içinde garantisi",
     color: "trust-bar__item--purple",
+  },
+  {
+    Icon: Percent,
+    title: "Avantajlı Fiyatlar",
+    description: "Gross fıyat avantajları",
+    color: "trust-bar__item--orange",
   },
 ];
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
+  Bell,
   ChevronDown,
   Grid3X3,
   Heart,
@@ -20,11 +21,17 @@ import { CartSheet } from "@/app/_components/CartSheet";
 import { KgmLogo } from "@/app/_components/KgmLogo";
 import { MegaMenu } from "@/app/_components/MegaMenu";
 import { NavIcon } from "@/app/_components/NavIcon";
+import { NotificationBell } from "@/app/_components/NotificationBell";
 import { SearchBar } from "@/app/_components/SearchBar";
 import { useAuthStore } from "@/lib/auth-store";
 import { cartItemCount } from "@/lib/cart";
 import { useCartStore } from "@/lib/cart-store";
 import { apiRequest } from "@/lib/api";
+import {
+  defaultCategoryMenu,
+  fetchCategoryMenu,
+  type CategoryMenuItem,
+} from "@/lib/category-menu";
 import { motion } from "framer-motion";
 import {
   defaultNavigation,
@@ -39,6 +46,7 @@ type HeaderProps = {
 
 export function Header({ compact = false }: HeaderProps) {
   const [navigation, setNavigation] = useState<NavigationData>(defaultNavigation);
+  const [categoryMenu, setCategoryMenu] = useState<CategoryMenuItem[]>(defaultCategoryMenu);
   const [menuOpen, setMenuOpen] = useState(false);
   const [announcementText, setAnnouncementText] = useState("Karacabey Gross Market için güvenli ödeme, canlı stok ve düzenli teslimat operasyonu.");
   const [isCartAnimating, setIsCartAnimating] = useState(false);
@@ -57,10 +65,14 @@ export function Header({ compact = false }: HeaderProps) {
       .then(setNavigation)
       .catch(() => setNavigation(defaultNavigation));
 
-    apiRequest<{ data: { announcement_text: string } }>("/api/v1/content/marketing", { signal: controller.signal })
+    fetchCategoryMenu(controller.signal)
+      .then(setCategoryMenu)
+      .catch(() => setCategoryMenu(defaultCategoryMenu));
+
+    apiRequest<{ announcement_text?: string | null }>("/api/v1/content/marketing", { signal: controller.signal })
       .then((res) => {
-        if (res.data?.announcement_text) {
-          setAnnouncementText(res.data.announcement_text);
+        if (res.announcement_text) {
+          setAnnouncementText(res.announcement_text);
         }
       })
       .catch(() => {
@@ -149,6 +161,7 @@ export function Header({ compact = false }: HeaderProps) {
         <div className="header-actions" aria-label="Hızlı işlemler">
           <IconLink href="/favorites" label="Favoriler" icon={<Heart size={20} />} mobileHidden />
           <IconLink href="/cargo-tracking" label="Kargo Takip" icon={<PackageSearch size={20} />} mobileHidden />
+          <NotificationBell />
 
           <button
             type="button"
@@ -176,10 +189,10 @@ export function Header({ compact = false }: HeaderProps) {
         <div className="site-header__nav-row">
           <div className="site-header__nav-shell">
             <div className="site-header__nav-primary">
-              <MegaMenu items={navigation.category} />
+              <MegaMenu items={categoryMenu} />
 
               <nav className="desktop-nav" aria-label="Ana menü">
-                {navigation.header.map((item) => (
+                {defaultNavigation.header.map((item) => (
                   <HeaderNavLink key={`${item.label}-${item.url}`} item={item} />
                 ))}
               </nav>
@@ -195,6 +208,7 @@ export function Header({ compact = false }: HeaderProps) {
       <HeaderDrawer
         isOpen={menuOpen}
         navigation={navigation}
+        categories={categoryMenu}
         isAuthenticated={isAuthenticated}
         userName={user?.name ?? null}
         onClose={() => setMenuOpen(false)}
@@ -302,6 +316,10 @@ function HeaderAccountLink({
 
       {isOpen && (
         <div className="header-account-dropdown__menu">
+          <Link href="/notifications" className="header-account-dropdown__item" onClick={() => setIsOpen(false)}>
+            <Bell size={16} />
+            Bildirimler
+          </Link>
           <Link href="/account/addresses" className="header-account-dropdown__item" onClick={() => setIsOpen(false)}>
             <MapPin size={16} />
             Adreslerim
@@ -345,6 +363,7 @@ function HeaderNavLink({ item, iconSize = 16 }: HeaderNavLinkProps) {
 type HeaderDrawerProps = {
   isOpen: boolean;
   navigation: NavigationData;
+  categories: CategoryMenuItem[];
   isAuthenticated: boolean;
   userName: string | null;
   onClose: () => void;
@@ -353,6 +372,7 @@ type HeaderDrawerProps = {
 function HeaderDrawer({
   isOpen,
   navigation,
+  categories,
   isAuthenticated,
   userName,
   onClose,
@@ -381,17 +401,37 @@ function HeaderDrawer({
 
         <div className="header-drawer__menu">
           <nav aria-label="Mobil menü">
+            {defaultNavigation.header.map((item) => (
+              <HeaderDrawerLink key={`header-${item.label}-${item.url}`} item={item} onClick={onClose} />
+            ))}
+
             <Link href="/products" onClick={onClose}>
               <Grid3X3 size={18} />
               Tüm Ürünler
             </Link>
 
-            {navigation.category.map((item) => (
-              <HeaderDrawerLink key={`category-${item.label}-${item.url}`} item={item} onClick={onClose} />
-            ))}
+            {categories.map((item) => (
+              <div key={`category-${item.slug}`} className="header-drawer__subgroup">
+                <Link href={`/products?category=${encodeURIComponent(item.slug)}`} onClick={onClose}>
+                  <Grid3X3 size={18} />
+                  {item.name}
+                </Link>
 
-            {navigation.header.map((item) => (
-              <HeaderDrawerLink key={`header-${item.label}-${item.url}`} item={item} onClick={onClose} />
+                {item.children.length > 0 ? (
+                  <div className="header-drawer__subitems">
+                    {item.children.map((child) => (
+                      <Link
+                        key={`category-child-${child.slug}`}
+                        href={`/products?category=${encodeURIComponent(child.slug)}`}
+                        className="header-drawer__subitem"
+                        onClick={onClose}
+                      >
+                        {child.name}
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ))}
 
             {navigation.top.map((item) => (
@@ -401,6 +441,11 @@ function HeaderDrawer({
 
           <div className="header-drawer__cards">
             <strong>Hızlı Erişim</strong>
+
+            <Link href={isAuthenticated ? "/notifications" : "/auth/login"} onClick={onClose}>
+              <Bell size={18} />
+              Bildirimler
+            </Link>
 
             <Link href="/checkout" onClick={onClose}>
               <ShoppingCart size={18} />

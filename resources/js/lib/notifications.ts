@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api";
+import { ApiRequestError, buildApiUrl } from "@/lib/api";
 
 export type StorefrontNotificationItem = {
   id: string;
@@ -26,22 +26,58 @@ function authHeaders(token: string) {
   };
 }
 
+async function notificationRequest<T>(path: string, init: RequestInit = {}) {
+  const response = await fetch(buildApiUrl(path), {
+    ...init,
+    headers: {
+      Accept: "application/json",
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...(init.headers ?? {}),
+    },
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | ({ message?: string; errors?: Record<string, string | string[]> } & T)
+    | null;
+
+  if (!response.ok) {
+    throw new ApiRequestError(
+      payload?.message ?? `İstek başarısız oldu (${response.status}).`,
+      response.status,
+      payload?.errors,
+      payload,
+    );
+  }
+
+  return payload as T;
+}
+
 export async function fetchUserNotifications(token: string, limit = 25) {
-  return apiRequest<NotificationIndexPayload>(`/api/v1/notifications?limit=${limit}`, {
+  return notificationRequest<NotificationIndexPayload>(`/api/v1/notifications?limit=${limit}`, {
     headers: authHeaders(token),
   });
 }
 
 export async function markNotificationRead(token: string, notificationId: string) {
-  return apiRequest<StorefrontNotificationItem>(`/api/v1/notifications/${notificationId}/read`, {
-    method: "POST",
-    headers: authHeaders(token),
-  });
+  const payload = await notificationRequest<{ data: StorefrontNotificationItem }>(
+    `/api/v1/notifications/${notificationId}/read`,
+    {
+      method: "POST",
+      headers: authHeaders(token),
+    },
+  );
+
+  return payload.data;
 }
 
 export async function markAllNotificationsRead(token: string) {
-  return apiRequest<{ status: string }>("/api/v1/notifications/read-all", {
-    method: "POST",
-    headers: authHeaders(token),
-  });
+  const payload = await notificationRequest<{ data: { status: string } }>(
+    "/api/v1/notifications/read-all",
+    {
+      method: "POST",
+      headers: authHeaders(token),
+    },
+  );
+
+  return payload.data;
 }

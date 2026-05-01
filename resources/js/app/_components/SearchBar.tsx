@@ -11,7 +11,7 @@ type SearchBarProps = {
   compact?: boolean;
 };
 
-const minSearchLength = 2;
+const minSearchLength = 1;
 
 export function SearchBar({ compact = false }: SearchBarProps) {
   const [query, setQuery] = useState("");
@@ -43,7 +43,7 @@ export function SearchBar({ compact = false }: SearchBarProps) {
     <form
       className={compact ? "search-bar search-bar--compact" : "search-bar"}
       action="/products"
-      onBlur={() => window.setTimeout(() => setIsOpen(false), 120)}
+      onBlur={() => window.setTimeout(() => setIsOpen(false), 200)}
       onFocus={() => setIsOpen(normalizedQuery.length >= minSearchLength)}
       onSubmit={handleSubmit}
     >
@@ -53,7 +53,7 @@ export function SearchBar({ compact = false }: SearchBarProps) {
           ref={inputRef}
           name="q"
           type="search"
-          placeholder="Ürün, marka veya kategori ara"
+          placeholder="Ürün veya marka ara..."
           aria-label="Ürün ara"
           autoComplete="off"
           value={query}
@@ -61,7 +61,6 @@ export function SearchBar({ compact = false }: SearchBarProps) {
           onChange={(event) => handleQueryChange(event.target.value)}
         />
       </div>
-      <button type="submit">Ara</button>
       {isOpen && suggestions.length > 0 ? (
         <Command className="search-suggestions" shouldFilter={false} loop>
           <div className="search-suggestions__title">Önerilen ürünler</div>

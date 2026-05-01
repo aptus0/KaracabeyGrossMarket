@@ -11,12 +11,14 @@ use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\HomepageBlockController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\OAuthController;
 use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\PaymentStatusController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\RefundController;
 use App\Http\Controllers\Api\StoryController;
 use App\Http\Controllers\Api\TestController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserOrderController;
 use App\Http\Controllers\Paytr\CallbackController;
 use Illuminate\Support\Facades\Route;
@@ -26,9 +28,13 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:api');
     Route::get('/auth/providers', [AuthController::class, 'providers'])->middleware('throttle:api');
 
+    // OAuth Routes
+    Route::get('/oauth/{provider}/authorize', [OAuthController::class, 'redirect'])->middleware('throttle:api');
+    Route::get('/oauth/{provider}/callback', [OAuthController::class, 'callback'])->middleware('throttle:api');
+
     // Tarayıcıdan doğrudan ziyaret edenleri ilgili frontend sayfasına yönlendir
-    Route::get('/auth/register', fn () => redirect(rtrim((string) env('FRONTEND_URL', '/'), '/') . '/auth/register'));
-    Route::get('/auth/login', fn () => redirect(rtrim((string) env('FRONTEND_URL', '/'), '/') . '/auth/login'));
+    Route::get('/auth/register', fn () => redirect(rtrim((string) config('commerce.domains.storefront', '/'), '/') . '/auth/register'));
+    Route::get('/auth/login', fn () => redirect(rtrim((string) config('commerce.domains.storefront', '/'), '/') . '/auth/login'));
 
     Route::get('/products', [ProductController::class, 'index'])->middleware('throttle:api');
     Route::get('/products/suggest', [ProductController::class, 'suggest'])->middleware('throttle:api');
@@ -58,6 +64,15 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:api', 'throttle:api'])->group(function (): void {
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+        // User Management
+        Route::get('/auth/profile', [UserController::class, 'profile']);
+        Route::put('/auth/profile', [UserController::class, 'updateProfile']);
+        Route::post('/auth/change-password', [UserController::class, 'changePassword']);
+
+        // OAuth Disconnection
+        Route::post('/oauth/{provider}/disconnect', [OAuthController::class, 'disconnect']);
+
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
         Route::post('/notifications/{notificationId}/read', [NotificationController::class, 'markAsRead']);

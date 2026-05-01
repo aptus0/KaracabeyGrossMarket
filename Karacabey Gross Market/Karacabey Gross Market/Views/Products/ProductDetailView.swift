@@ -7,13 +7,38 @@ struct ProductDetailView: View {
     @EnvironmentObject private var favManager: FavoritesManager
     @State private var qty = 1
     @State private var addedToCart = false
+    @State private var showToolKit = false
 
     var body: some View {
         Group {
             if viewModel.isLoading {
                 ProgressView("Yükleniyor…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let p = viewModel.product {
-                productContent(p)
+                ZStack {
+                    productContent(p)
+
+                    if showToolKit {
+                        VStack(spacing: 0) {
+                            HStack {
+                                Text("Ürün Bilgileri")
+                                    .font(.system(size: 18, weight: .bold))
+                                Spacer()
+                                Button(action: { withAnimation(.easeInOut) { showToolKit = false } }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .padding()
+                            .background(Color(UIColor.systemBackground))
+
+                            ProductToolKit(product: p)
+                        }
+                        .frame(maxHeight: .infinity, alignment: .bottom)
+                        .transition(.move(edge: .bottom))
+                        .background(Color.black.opacity(0.3).ignoresSafeArea())
+                    }
+                }
             } else if let err = viewModel.errorMessage {
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle").font(.largeTitle).foregroundColor(.orange)
@@ -25,7 +50,7 @@ struct ProductDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack {
+                HStack(spacing: 12) {
                     if let p = viewModel.product {
                         Button {
                             Task { await favManager.toggle(p) }
@@ -231,54 +256,72 @@ struct ProductDetailView: View {
     private func stickyBottomBar(_ p: Product) -> some View {
         VStack(spacing: 0) {
             Divider()
-            HStack(spacing: 16) {
-                // Quantity Stepper
-                HStack(spacing: 16) {
-                    Button { if qty > 1 { UIImpactFeedbackGenerator(style: .light).impactOccurred(); qty -= 1 } } label: {
-                        Image(systemName: "minus.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(qty > 1 ? .kgmOrange : Color(UIColor.systemGray4))
+            VStack(spacing: 12) {
+                // Info Button
+                Button(action: { withAnimation(.easeInOut) { showToolKit = true } }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle.fill")
+                        Text("Ürün Bilgileri")
+                        Spacer()
+                        Image(systemName: "chevron.right")
                     }
-                    
-                    Text("\(qty)")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .frame(width: 30)
-                    
-                    Button { UIImpactFeedbackGenerator(style: .light).impactOccurred(); qty += 1 } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(.kgmOrange)
-                    }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.kgmOrange)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.kgmOrange.opacity(0.1))
+                    .cornerRadius(10)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color(UIColor.secondarySystemBackground))
-                .cornerRadius(30)
 
-                // Add to Cart Button
-                Button {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    Task {
-                        await cartManager.addItem(slug: p.slug, quantity: qty)
-                        withAnimation { addedToCart = true }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            withAnimation { addedToCart = false }
+                HStack(spacing: 16) {
+                    // Quantity Stepper
+                    HStack(spacing: 16) {
+                        Button { if qty > 1 { UIImpactFeedbackGenerator(style: .light).impactOccurred(); qty -= 1 } } label: {
+                            Image(systemName: "minus.circle.fill")
+                                .font(.system(size: 28))
+                                .foregroundColor(qty > 1 ? .kgmOrange : Color(UIColor.systemGray4))
+                        }
+
+                        Text("\(qty)")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .frame(width: 30)
+
+                        Button { UIImpactFeedbackGenerator(style: .light).impactOccurred(); qty += 1 } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 28))
+                                .foregroundColor(.kgmOrange)
                         }
                     }
-                } label: {
-                    HStack {
-                        Image(systemName: addedToCart ? "checkmark" : "cart.fill")
-                        Text(addedToCart ? "Eklendi" : "Sepete Ekle")
-                    }
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(addedToCart ? Color.green : (p.isInStock ? Color.kgmOrange : Color.gray))
-                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(UIColor.secondarySystemBackground))
                     .cornerRadius(30)
-                    .shadow(color: (addedToCart ? Color.green : Color.kgmOrange).opacity(0.3), radius: 10, y: 5)
+
+                    // Add to Cart Button
+                    Button {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        Task {
+                            await cartManager.addItem(slug: p.slug, quantity: qty)
+                            withAnimation { addedToCart = true }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                withAnimation { addedToCart = false }
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: addedToCart ? "checkmark" : "cart.fill")
+                            Text(addedToCart ? "Eklendi" : "Sepete Ekle")
+                        }
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(addedToCart ? Color.green : (p.isInStock ? Color.kgmOrange : Color.gray))
+                        .foregroundColor(.white)
+                        .cornerRadius(30)
+                        .shadow(color: (addedToCart ? Color.green : Color.kgmOrange).opacity(0.3), radius: 10, y: 5)
+                    }
+                    .disabled(!p.isInStock || addedToCart)
                 }
-                .disabled(!p.isInStock || addedToCart)
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)

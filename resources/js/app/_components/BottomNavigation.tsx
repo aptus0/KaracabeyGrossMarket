@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Grid3X3,
+  Heart,
   Home,
   ShoppingCart,
   User,
@@ -35,8 +36,14 @@ const bottomNavItems = [
       pathname.startsWith("/checkout"),
   },
   {
+    href: "/favorites",
+    label: "Favoriler",
+    icon: Heart,
+    match: (pathname: string) => pathname.startsWith("/favorites"),
+  },
+  {
     href: "/account",
-    label: "Hesabım",
+    label: "Profil",
     icon: User,
     match: (pathname: string) =>
       pathname.startsWith("/account") ||
@@ -48,64 +55,57 @@ const bottomNavItems = [
 export function BottomNavigation() {
   const pathname = usePathname();
   const cartCount = useCartStore((state) => cartItemCount(state.items));
-  const cartTotal = useCartStore((state) => state.total_cents);
   const isCartOpen = useCartStore((state) => state.isSheetOpen);
   const openCartSheet = useCartStore((state) => state.openSheet);
 
   return (
-    <nav className="bottom-nav" aria-label="Mobil app bar">
-      {bottomNavItems.map((item) => {
-        const Icon = item.icon;
-        const isActive = item.href === "/checkout" ? pathname.startsWith("/checkout") || isCartOpen : item.match(pathname);
-        const className = `bottom-nav__item${
-          isActive ? " is-active" : ""
-        }${
-          item.variant === "primary"
-            ? " bottom-nav__item--primary"
-            : ""
-        }`;
+    <nav className="bottom-nav" aria-label="Mobil alt navigasyon">
+      <div className="bottom-nav__container">
+        {bottomNavItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = item.href === "/checkout" ? isCartOpen || pathname.startsWith("/checkout") : item.match(pathname);
+          
+          const className = `bottom-nav__item${
+            isActive ? " is-active" : ""
+          }${
+            item.variant === "primary"
+              ? " bottom-nav__item--primary"
+              : ""
+          }`;
 
-        if (item.href === "/checkout") {
+          if (item.href === "/checkout") {
+            return (
+              <button
+                key={item.href}
+                type="button"
+                className={className}
+                onClick={openCartSheet}
+              >
+                <div className="bottom-nav__icon-wrapper">
+                  <Icon size={20} />
+                  {cartCount > 0 && (
+                    <span className="bottom-nav__badge">{cartCount}</span>
+                  )}
+                </div>
+                <span>{item.label}</span>
+              </button>
+            );
+          }
+
           return (
-            <button
+            <Link
               key={item.href}
-              type="button"
+              href={item.href}
               className={className}
-              aria-label="Sepeti aç"
-              aria-expanded={isCartOpen}
-              aria-haspopup="dialog"
-              onClick={openCartSheet}
             >
-              <Icon size={18} />
+              <div className="bottom-nav__icon-wrapper">
+                <Icon size={20} />
+              </div>
               <span>{item.label}</span>
-              {cartTotal > 0 ? (
-                <em className="bottom-nav__meta">{new Intl.NumberFormat("tr-TR", {
-                  notation: "compact",
-                  maximumFractionDigits: 1,
-                }).format(cartTotal / 100)}</em>
-              ) : null}
-              {cartCount > 0 ? (
-                <small className="bottom-nav__badge">{cartCount}</small>
-              ) : null}
-            </button>
+            </Link>
           );
-        }
-
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={className}
-            aria-current={isActive ? "page" : undefined}
-          >
-            <Icon size={18} />
-            <span>{item.label}</span>
-            {item.href === "/checkout" && cartCount > 0 ? (
-              <small className="bottom-nav__badge">{cartCount}</small>
-            ) : null}
-          </Link>
-        );
-      })}
+        })}
+      </div>
     </nav>
   );
 }

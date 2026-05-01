@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Support\TenantResolver;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -13,16 +14,20 @@ use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
-    public function index(): View
+    public function index(Request $request, TenantResolver $tenants): View
     {
+        $tenant = $tenants->resolve($request);
+
         return view('admin.categories.index', [
             'categories' => Category::query()
+                ->where('tenant_id', $tenant->id)
                 ->with('parent')
                 ->orderBy('parent_id')
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->paginate(40),
             'parentCategories' => Category::query()
+                ->where('tenant_id', $tenant->id)
                 ->whereNull('parent_id')
                 ->orderBy('sort_order')
                 ->orderBy('name')
@@ -38,6 +43,7 @@ class CategoryController extends Controller
         $validated['slug'] = $validated['slug'] ?: Str::slug($validated['name']);
 
         Category::query()->create($validated + ['tenant_id' => $tenant->id]);
+        $this->forgetCategoryCache($tenant->id);
 
         return back()->with('status', 'Kategori olusturuldu.');
     }
@@ -48,13 +54,16 @@ class CategoryController extends Controller
         $validated['slug'] = $validated['slug'] ?: Str::slug($validated['name']);
 
         $category->update($validated);
+        $this->forgetCategoryCache($category->tenant_id);
 
         return back()->with('status', 'Kategori guncellendi.');
     }
 
     public function destroy(Category $category): RedirectResponse
     {
+        $tenantId = $category->tenant_id;
         $category->delete();
+        $this->forgetCategoryCache($tenantId);
 
         return back()->with('status', 'Kategori silindi.');
     }
@@ -91,5 +100,10 @@ class CategoryController extends Controller
             'sort_order' => $validated['sort_order'] ?? 0,
             'is_active' => $request->boolean('is_active'),
         ];
+    }
+
+    private function forgetCategoryCache(int $tenantId): void
+    {
+        Cache::forget("tenant:{$tenantId}:categories:index:v1");
     }
 }

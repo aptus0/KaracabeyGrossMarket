@@ -1,8 +1,9 @@
 import SwiftUI
+import UIKit
 
 @main
 struct Karacabey_Gross_MarketApp: App {
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     @StateObject private var authManager = AuthManager.shared
     @StateObject private var cartManager = CartManager.shared

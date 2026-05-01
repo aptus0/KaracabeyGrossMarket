@@ -49,7 +49,9 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     fetchStorefrontCategories(),
   ]);
 
-  const activeCategory = categories.find((c) => c.slug === params.category);
+  const activeCategory = categories
+    .flatMap((category) => [category, ...(category.children ?? [])])
+    .find((category) => category.slug === params.category);
   const pageWindowStart = Math.max(1, resolvedPage - 2);
   const pageWindowEnd = Math.min(lastPage, resolvedPage + 2);
   const visiblePages = Array.from(

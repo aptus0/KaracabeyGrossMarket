@@ -31,31 +31,31 @@ export function ShowroomSection({
   };
 
   return (
-    <section className={`py-12 px-4 md:px-8 my-8 rounded-3xl relative overflow-hidden glass-panel ${themeClasses[theme]}`}>
+    <section className={`py-10 md:py-14 px-6 md:px-10 my-10 md:my-12 rounded-3xl relative overflow-hidden glass-panel ${themeClasses[theme]}`}>
       {/* Dekoratif arkaplan bulanıklıkları */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-white/40 blur-3xl rounded-full -translate-y-1/2 translate-x-1/4 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/40 blur-3xl rounded-full translate-y-1/3 -translate-x-1/4 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-white/30 blur-3xl rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/30 blur-3xl rounded-full translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
-      <div className="max-w-[1120px] mx-auto relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+      <div className="relative z-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
           <div>
-            <h2 className="showroom-title">{title}</h2>
-            <p className="showroom-subtitle">{subtitle}</p>
+            <h2 className="showroom-title text-2xl md:text-3xl font-bold mb-2">{title}</h2>
+            <p className="showroom-subtitle text-gray-600">{subtitle}</p>
           </div>
-          
+
           {actionLink && (
-            <Link 
+            <Link
               href={actionLink}
-              className="inline-flex items-center gap-1 text-sm font-bold text-kgm-orange hover:text-orange-700 transition-colors bg-white/60 px-4 py-2 rounded-full shadow-sm backdrop-blur-md"
+              className="inline-flex items-center gap-2 text-sm font-bold text-kgm-orange hover:text-orange-700 transition-all duration-300 bg-white/70 hover:bg-white px-6 py-2.5 rounded-full shadow-sm backdrop-blur-md hover:shadow-md"
             >
-              {actionText} <ChevronRight size={16} />
+              {actionText} <ChevronRight size={18} />
             </Link>
           )}
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {products.slice(0, 4).map((product) => (
-            <div key={product.slug} className="transform transition-transform duration-300 hover:-translate-y-2">
+            <div key={product.slug} className="transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
               <ProductCard product={product} />
             </div>
           ))}

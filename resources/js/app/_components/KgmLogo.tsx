@@ -8,9 +8,8 @@ export function KgmLogo({ compact = false, variant = "full" }: KgmLogoProps) {
     return (
       <span className={compact ? "kgm-logo kgm-logo--app kgm-logo--compact" : "kgm-logo kgm-logo--app"}>
         <img
-          src="/assets/kg-light.png"
-          alt="Karacabey Gross Market Logo"
-          className="w-full h-full object-contain"
+          src="/assets/kgm-favicon-256.png"
+          alt="Karacabey Gross Market"
         />
       </span>
     );
@@ -19,10 +18,10 @@ export function KgmLogo({ compact = false, variant = "full" }: KgmLogoProps) {
   return (
     <span className={compact ? "kgm-logo kgm-logo--compact" : "kgm-logo"}>
       <img
-        src="/assets/kgm-logo.png"
+        src="/assets/kg-web.png"
         alt="Karacabey Gross Market"
-        width={1400}
-        height={742}
+        width={1600}
+        height={460}
       />
     </span>
   );

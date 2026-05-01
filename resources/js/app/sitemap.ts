@@ -2,8 +2,9 @@ import type { MetadataRoute } from "next";
 import { blogPosts } from "@/lib/blog";
 import { products } from "@/lib/catalog";
 import { storePages } from "@/lib/content";
+import { siteUrl } from "@/lib/seo";
 
-const baseUrl = "https://karacabeygrossmarket.com";
+const baseUrl = siteUrl;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

@@ -38,23 +38,15 @@ class PushNotificationManager: NSObject, ObservableObject, UNUserNotificationCen
     }
 
     func registerDeviceTokenWithBackend(_ deviceToken: String) async {
-        guard let token = KeychainManager.shared.retrieve(key: "auth_token") else {
+        guard AuthManager.shared.isLoggedIn else {
             print("Not authenticated, skipping device token registration")
             return
         }
 
-        let request = DeviceTokenRequest(
-            token: deviceToken,
-            device_type: "ios",
-            device_name: UIDevice.current.name
-        )
+        let endpoint = DeviceTokenEndpoint(token: deviceToken, deviceName: UIDevice.current.name)
 
         do {
-            let response = try await APIClient.shared.post(
-                "/notifications/device-tokens",
-                body: request,
-                headers: ["Authorization": "Bearer \(token)"]
-            )
+            let response: DeviceTokenResponse = try await APIClient.shared.request(endpoint)
             print("Device token registered: \(response)")
         } catch {
             print("Failed to register device token: \(error)")

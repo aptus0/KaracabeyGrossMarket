@@ -1,13 +1,12 @@
 import "server-only";
 
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import {
   filterProducts as fallbackFilterProducts,
   findProduct as fallbackFindProduct,
   type KgmCategory,
   type KgmProduct,
 } from "@/lib/catalog";
+import { resolveInternalApiOrigin } from "@/lib/server-config";
 
 type StorefrontCategory = {
   id: number;
@@ -40,87 +39,33 @@ type ProductIndexResponse = {
   to?: number | null;
 };
 
-function readLaravelEnvValue(key: string) {
-  const envPath = resolve(process.cwd(), "..", "..", ".env");
-
-  if (!existsSync(envPath)) {
-    return null;
-  }
-
-  const file = readFileSync(envPath, "utf8");
-
-  for (const rawLine of file.split(/\r?\n/)) {
-    const line = rawLine.trim();
-
-    if (!line || line.startsWith("#") || !line.startsWith(`${key}=`)) {
-      continue;
-    }
-
-    const value = line.slice(key.length + 1).trim();
-
-    return value.replace(/^['"]|['"]$/g, "");
-  }
-
-  return null;
-}
+type CategoryIndexResponse = {
+  data?: Array<{
+    id: number;
+    name: string;
+    slug: string;
+    description?: string | null;
+    image_url?: string | null;
+    product_count?: number;
+    children?: Array<{
+      id: number;
+      name: string;
+      slug: string;
+      description?: string | null;
+      image_url?: string | null;
+      product_count?: number;
+    }>;
+  }>;
+};
 
 function stripTrailingSlash(value: string | null | undefined) {
   return value ? value.replace(/\/+$/, "") : "";
 }
 
-function normalizeBackendOrigin(value: string | null | undefined) {
-  const origin = stripTrailingSlash(value);
-
-  if (!origin) {
-    return "";
-  }
-
-  try {
-    const parsed = new URL(origin);
-
-    if (parsed.protocol === "http:" && parsed.hostname.endsWith(".test")) {
-      parsed.protocol = "https:";
-    }
-
-    return stripTrailingSlash(parsed.toString());
-  } catch {
-    return origin;
-  }
-}
-
-function isLocalTestOrigin(value: string | null | undefined) {
-  if (!value) {
-    return false;
-  }
-
-  try {
-    return new URL(value).hostname.endsWith(".test");
-  } catch {
-    return false;
-  }
-}
-
-function resolveBackendOrigin() {
-  const explicitApiOrigin = process.env.NEXT_PUBLIC_API_URL
-    ?? process.env.API_URL
-    ?? readLaravelEnvValue("API_URL");
-
-  if (explicitApiOrigin) {
-    return normalizeBackendOrigin(explicitApiOrigin);
-  }
-
-  const appOrigin = process.env.APP_URL
-    ?? readLaravelEnvValue("APP_URL");
-
-  if (isLocalTestOrigin(appOrigin)) {
-    return "http://127.0.0.1:8000";
-  }
-
-  return normalizeBackendOrigin(appOrigin ?? "http://127.0.0.1:8000");
-}
-
 function buildServerApiUrl(path: string) {
-  return `${resolveBackendOrigin()}${path.startsWith("/") ? path : `/${path}`}`;
+  const origin = stripTrailingSlash(resolveInternalApiOrigin());
+
+  return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 function toStorefrontProduct(product: StorefrontProductResponse): KgmProduct {
@@ -171,6 +116,23 @@ function safeImageUrl(url?: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+function toStorefrontCategory(category: NonNullable<CategoryIndexResponse["data"]>[number]): KgmCategory {
+  return {
+    slug: category.slug,
+    name: category.name,
+    count: typeof category.product_count === "number" ? category.product_count : undefined,
+    description: category.description ?? null,
+    imageUrl: category.image_url ?? null,
+    children: (category.children ?? []).map((child) => ({
+      slug: child.slug,
+      name: child.name,
+      count: typeof child.product_count === "number" ? child.product_count : undefined,
+      description: child.description ?? null,
+      imageUrl: child.image_url ?? null,
+    })),
+  };
 }
 
 export async function fetchStorefrontProducts(options?: {
@@ -238,16 +200,6 @@ export async function fetchStorefrontProducts(options?: {
   }
 }
 
-type CategoryIndexResponse = {
-  data?: Array<{
-    id: number;
-    name: string;
-    slug: string;
-    description?: string | null;
-    image_url?: string | null;
-  }>;
-};
-
 export async function fetchStorefrontCategories(): Promise<KgmCategory[]> {
   try {
     const response = await fetch(buildServerApiUrl("/api/v1/categories"), {
@@ -261,7 +213,7 @@ export async function fetchStorefrontCategories(): Promise<KgmCategory[]> {
 
     const payload = (await response.json()) as CategoryIndexResponse;
 
-    return (payload.data ?? []).map((c) => ({ slug: c.slug, name: c.name }));
+    return (payload.data ?? []).map(toStorefrontCategory);
   } catch {
     return [];
   }

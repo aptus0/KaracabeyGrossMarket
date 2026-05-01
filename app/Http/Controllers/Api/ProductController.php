@@ -47,11 +47,15 @@ class ProductController extends Controller
                 ->where('slug', $validated['category'])
                 ->first();
 
+            $categoryIds = $category
+                ? $category->children()->pluck('id')->push($category->id)->all()
+                : [];
+
             $query->when(
                 $category,
                 fn ($query) => $query->whereHas(
                     'categories',
-                    fn ($query) => $query->whereIn('categories.id', $category->children()->pluck('id')->push($category->id))
+                    fn ($query) => $query->whereIn('categories.id', $categoryIds)
                 ),
                 fn ($query) => $query->whereRaw('1 = 0')
             );

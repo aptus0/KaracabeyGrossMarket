@@ -12,6 +12,7 @@
         "php": "^8.3",
         "edamov/pushok": "*",
         "laravel/framework": "^13.0",
+        "laravel/socialite": "*",
         "laravel/tinker": "^3.0",
         "league/oauth2-facebook": "*",
         "league/oauth2-google": "*",

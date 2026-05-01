@@ -4,7 +4,7 @@ import { Breadcrumb } from "@/app/_components/Breadcrumb";
 import { SeoHead } from "@/app/_components/SeoHead";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
 import { findStorePage, storePages } from "@/lib/content";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata, siteUrl } from "@/lib/seo";
 
 type CorporatePageProps = {
   params: Promise<{
@@ -48,7 +48,7 @@ export default async function CorporatePage({ params }: CorporatePageProps) {
     "@type": "WebPage",
     name: page.title,
     description: page.seo.description,
-    url: `https://karacabeygrossmarket.com/kurumsal/${page.slug}`,
+    url: `${siteUrl}/kurumsal/${page.slug}`,
   };
 
   return (
