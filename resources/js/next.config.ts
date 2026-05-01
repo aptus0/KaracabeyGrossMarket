@@ -30,7 +30,7 @@ function stripTrailingSlash(value: string | null | undefined) {
   return value ? value.replace(/\/+$/, "") : "";
 }
 
-function normalizeBackendOrigin(value: string | null | undefined) {
+function normalizeOrigin(value: string | null | undefined) {
   const origin = stripTrailingSlash(value);
 
   if (!origin) {
@@ -50,35 +50,40 @@ function normalizeBackendOrigin(value: string | null | undefined) {
   }
 }
 
-function isLocalTestOrigin(value: string | null | undefined) {
-  if (!value) {
-    return false;
-  }
-
-  try {
-    return new URL(value).hostname.endsWith(".test");
-  } catch {
-    return false;
-  }
-}
-
-const explicitApiOrigin = process.env.NEXT_PUBLIC_API_URL
+const internalApiOrigin = process.env.INTERNAL_API_URL
+  ?? process.env.API_INTERNAL_URL
+  ?? readLaravelEnvValue("API_INTERNAL_URL")
   ?? process.env.API_URL
-  ?? readLaravelEnvValue("API_URL");
+  ?? readLaravelEnvValue("API_URL")
+  ?? "http://127.0.0.1:8000";
 
-const appOrigin = process.env.APP_URL
-  ?? readLaravelEnvValue("APP_URL");
+const publicApiOrigin = process.env.NEXT_PUBLIC_API_URL
+  ?? process.env.API_URL
+  ?? readLaravelEnvValue("API_URL")
+  ?? "https://api.karacabeygrossmarket.com";
 
-const backendOrigin = explicitApiOrigin
-  ? normalizeBackendOrigin(explicitApiOrigin)
-  : isLocalTestOrigin(appOrigin)
-    ? "http://127.0.0.1:8000"
-    : normalizeBackendOrigin(appOrigin ?? "http://127.0.0.1:8000");
+const storefrontOrigin = process.env.NEXT_PUBLIC_SITE_URL
+  ?? process.env.STOREFRONT_URL
+  ?? readLaravelEnvValue("STOREFRONT_URL")
+  ?? process.env.FRONTEND_URL
+  ?? readLaravelEnvValue("FRONTEND_URL")
+  ?? "https://karacabeygrossmarket.com";
+
+const cdnOrigin = process.env.NEXT_PUBLIC_CDN_URL
+  ?? process.env.CDN_URL
+  ?? readLaravelEnvValue("CDN_URL")
+  ?? "";
 
 const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  env: {
+    NEXT_PUBLIC_SITE_URL: normalizeOrigin(storefrontOrigin),
+    NEXT_PUBLIC_API_URL: normalizeOrigin(publicApiOrigin),
+    NEXT_PUBLIC_CDN_URL: normalizeOrigin(cdnOrigin),
+  },
+  assetPrefix: process.env.NODE_ENV === "production" && cdnOrigin ? normalizeOrigin(cdnOrigin) : undefined,
   images: {
     remotePatterns: [
       {
@@ -91,11 +96,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${backendOrigin}/api/:path*`,
+        destination: `${normalizeOrigin(internalApiOrigin)}/api/:path*`,
       },
       {
         source: "/oauth/:path*",
-        destination: `${backendOrigin}/oauth/:path*`,
+        destination: `${normalizeOrigin(internalApiOrigin)}/oauth/:path*`,
       },
     ];
   },

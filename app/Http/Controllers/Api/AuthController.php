@@ -7,9 +7,9 @@ use App\Models\ApiToken;
 use App\Models\CartCoupon;
 use App\Models\CartItem;
 use App\Models\User;
-use App\Notifications\StorefrontNotification;
 use App\Services\Auth\ApiTokenIssuer;
 use App\Services\Auth\OAuthProviderManager;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,7 +23,11 @@ class AuthController extends Controller
     private const MAX_ATTEMPTS   = 5;
     private const DECAY_SECONDS  = 900; // 15 dakika
 
-    public function register(Request $request, ApiTokenIssuer $tokenIssuer): JsonResponse
+    public function register(
+        Request $request,
+        ApiTokenIssuer $tokenIssuer,
+        PushNotificationService $pushNotifications,
+    ): JsonResponse
     {
         // Telefonu önceden normalize ederek doğru unique kontrolü sağla
         $request->merge([
@@ -57,12 +61,18 @@ class AuthController extends Controller
         ]);
 
         $this->claimGuestCart($request, $user);
-        $user->notify(new StorefrontNotification([
-            'type' => 'general',
-            'title' => 'Karacabey Gross Market hesabınız hazır',
-            'body' => 'Yeni kampanyalar, ürün fırsatları ve sipariş güncellemeleri için bildirim merkezi aktif edildi.',
-            'action_url' => '/notifications',
-        ]));
+        $pushNotifications->sendToUser(
+            $user,
+            'Karacabey Gross Market hesabınız hazır',
+            'Yeni kampanyalar, ürün fırsatları ve sipariş güncellemeleri için bildirim merkezi aktif edildi.',
+            [
+                'type' => 'general',
+                'action_url' => '/notifications',
+                'payload' => [
+                    'source' => 'welcome',
+                ],
+            ],
+        );
 
         return response()->json($this->buildAuthPayload(
             $user,

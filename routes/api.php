@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\PaymentStatusController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\RefundController;
 use App\Http\Controllers\Api\StoryController;
+use App\Http\Controllers\Api\TestController;
 use App\Http\Controllers\Api\UserOrderController;
 use App\Http\Controllers\Paytr\CallbackController;
 use Illuminate\Support\Facades\Route;
@@ -61,6 +62,9 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
         Route::post('/notifications/{notificationId}/read', [NotificationController::class, 'markAsRead']);
         Route::post('/notifications/device-tokens', [NotificationController::class, 'storeDeviceToken']);
+        Route::post('/test/notification', [TestController::class, 'sendTestNotification']);
+        Route::post('/test/device', [TestController::class, 'registerTestDevice']);
+        Route::get('/test/notifications', [TestController::class, 'listNotifications']);
         Route::apiResource('addresses', AddressController::class)->except(['show']);
         Route::get('/favorites', [FavoriteController::class, 'index']);
         Route::post('/favorites/{product:slug}', [FavoriteController::class, 'store']);

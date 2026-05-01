@@ -19,6 +19,9 @@ export type KgmCategory = {
   slug: string;
   name: string;
   count?: number;
+  description?: string | null;
+  imageUrl?: string | null;
+  children?: KgmCategory[];
 };
 
 export type KgmCartItem = KgmProduct & {

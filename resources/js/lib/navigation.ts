@@ -26,7 +26,6 @@ export const defaultNavigation: NavigationData = {
   header: [
     { label: "Ürünler", url: "/products", icon: "grid" },
     { label: "Kampanyalar", url: "/kampanyalar", icon: "tag" },
-    { label: "Kurumsal", url: "/kurumsal/hakkimizda", icon: "file-text" },
   ],
   category: [
     { label: "Süt ve Kahvaltılık", url: "/products?category=sut-ve-kahvaltilik", icon: "grid" },

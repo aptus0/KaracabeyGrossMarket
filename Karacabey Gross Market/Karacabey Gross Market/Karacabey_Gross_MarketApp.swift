@@ -2,6 +2,8 @@ import SwiftUI
 
 @main
 struct Karacabey_Gross_MarketApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     @StateObject private var authManager = AuthManager.shared
     @StateObject private var cartManager = CartManager.shared
     @StateObject private var favManager  = FavoritesManager.shared
@@ -20,7 +22,7 @@ struct Karacabey_Gross_MarketApp: App {
     init() {
         Task {
             _ = await PushNotificationManager.shared.requestAuthorization()
-            PushNotificationManager.shared.registerForRemoteNotifications()
+            await PushNotificationManager.shared.registerForRemoteNotifications()
         }
     }
 }

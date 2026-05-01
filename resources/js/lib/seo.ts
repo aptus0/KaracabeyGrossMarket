@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const siteName = "Karacabey Gross Market";
-export const siteUrl = "https://karacabeygrossmarket.com";
+export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://karacabeygrossmarket.com";
 export const defaultSeoImage = "/assets/kgm-logo.png";
 export const defaultSeoKeywords = [
   "Karacabey Gross Market",

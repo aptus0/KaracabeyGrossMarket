@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DeviceToken;
 use App\Models\Notification;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -23,15 +24,23 @@ class PushNotificationService
         $this->apnsBundleId = config('services.apns.bundle_id');
     }
 
-    public function sendToUser(User $user, string $title, string $body, array $data = []): void
+    public function sendToUser(
+        User $user,
+        string $title,
+        string $body,
+        array $data = [],
+        ?int $tenantId = null,
+    ): Notification
     {
+        $payload = $this->normalizePayload($data);
+
         $notification = Notification::create([
             'user_id' => $user->id,
-            'tenant_id' => $user->tenant_id ?? 1,
-            'type' => $data['type'] ?? 'general',
+            'tenant_id' => $tenantId ?? $this->resolveTenantId($payload),
+            'type' => $payload['type'] ?? 'general',
             'title' => $title,
             'body' => $body,
-            'data' => $data,
+            'data' => $payload,
             'sent_at' => now(),
         ]);
 
@@ -40,8 +49,10 @@ class PushNotificationService
             ->get();
 
         foreach ($tokens as $token) {
-            $this->sendPushNotification($token, $title, $body, $data);
+            $this->sendPushNotification($token, $title, $body, $payload);
         }
+
+        return $notification;
     }
 
     public function sendOrderStatusUpdate(object $order, string $status): void
@@ -102,13 +113,37 @@ class PushNotificationService
         }
     }
 
+    private function normalizePayload(array $data): array
+    {
+        $payload = $data;
+
+        if (! isset($payload['payload']) || ! is_array($payload['payload'])) {
+            $payload['payload'] = [];
+        }
+
+        return $payload;
+    }
+
+    private function resolveTenantId(array $data): int
+    {
+        if (isset($data['tenant_id']) && is_numeric($data['tenant_id'])) {
+            return (int) $data['tenant_id'];
+        }
+
+        return (int) (Tenant::query()->where('slug', 'karacabey-gross-market')->value('id')
+            ?? Tenant::query()->value('id')
+            ?? 1);
+    }
+
     private function sendPushNotification(DeviceToken $token, string $title, string $body, array $data): void
     {
         try {
+            $pushData = $this->sanitizePushData($data);
+
             if ($token->device_type === 'ios') {
-                $this->sendAPNS($token->token, $title, $body, $data);
+                $this->sendAPNS($token->token, $title, $body, $pushData);
             } elseif ($token->device_type === 'android') {
-                $this->sendFCM($token->token, $title, $body, $data);
+                $this->sendFCM($token->token, $title, $body, $pushData);
             }
         } catch (\Exception $e) {
             Log::error('Push notification failed', [
@@ -118,26 +153,69 @@ class PushNotificationService
         }
     }
 
+    private function sanitizePushData(array $data): array
+    {
+        $sanitized = [];
+
+        foreach ($data as $key => $value) {
+            if (is_array($value) || is_object($value)) {
+                $sanitized[$key] = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                continue;
+            }
+
+            if (is_bool($value)) {
+                $sanitized[$key] = $value ? '1' : '0';
+                continue;
+            }
+
+            $sanitized[$key] = $value;
+        }
+
+        return $sanitized;
+    }
+
     private function sendAPNS(string $deviceToken, string $title, string $body, array $data): void
     {
-        $payload = [
-            'aps' => [
-                'alert' => [
-                    'title' => $title,
-                    'body' => $body,
-                ],
-                'sound' => 'default',
-                'badge' => 1,
-            ],
-            'data' => $data,
-        ];
+        $keyPath = $this->apnsKey;
 
-        // In production, use proper APNS client library
-        // This is a simplified example
-        Log::info('APNS notification prepared', [
-            'device_token' => substr($deviceToken, 0, 10) . '...',
-            'payload' => $payload,
-        ]);
+        if (! file_exists($keyPath)) {
+            Log::warning('APNS key file not found', ['path' => $keyPath]);
+            return;
+        }
+
+        try {
+            $authentication = new \Pushok\AuthenticationToken(
+                file_get_contents($keyPath),
+                $this->apnsKeyId,
+                $this->apnsTeamId
+            );
+
+            $notification = new \Pushok\Notification();
+            $notification
+                ->setDeviceToken($deviceToken)
+                ->setAlert(['title' => $title, 'body' => $body])
+                ->setSound('default')
+                ->setBadge(1);
+
+            if (! empty($data)) {
+                foreach ($data as $key => $value) {
+                    $notification->setCustomValue($key, $value);
+                }
+            }
+
+            $client = new \Pushok\Client($authentication);
+            $client->isProduction(config('services.apns.production') ?? false);
+            $client->push($notification);
+
+            Log::info('APNS notification sent', [
+                'device_token' => substr($deviceToken, 0, 10) . '...',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('APNS notification error', [
+                'error' => $e->getMessage(),
+                'device_token' => substr($deviceToken, 0, 10) . '...',
+            ]);
+        }
     }
 
     private function sendFCM(string $deviceToken, string $title, string $body, array $data): void

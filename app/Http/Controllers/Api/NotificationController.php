@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\UserDeviceToken;
+use App\Models\DeviceToken;
+use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Notifications\DatabaseNotification;
 
 class NotificationController extends Controller
 {
@@ -18,23 +18,31 @@ class NotificationController extends Controller
 
         $user = $request->user();
         $limit = (int) ($validated['limit'] ?? 25);
-        $notifications = $user->notifications()->latest()->limit($limit)->get();
+        $notifications = Notification::query()
+            ->where('user_id', $user->id)
+            ->latest()
+            ->limit($limit)
+            ->get();
 
         return response()->json([
-            'data' => $notifications->map(fn (DatabaseNotification $notification): array => $this->serialize($notification))->values(),
+            'data' => $notifications->map(fn (Notification $notification): array => $this->serialize($notification))->values(),
             'meta' => [
-                'unread_count' => $user->unreadNotifications()->count(),
+                'unread_count' => Notification::query()
+                    ->where('user_id', $user->id)
+                    ->whereNull('read_at')
+                    ->count(),
             ],
         ]);
     }
 
     public function markAsRead(Request $request, string $notificationId): JsonResponse
     {
-        $notification = $request->user()->notifications()->whereKey($notificationId)->firstOrFail();
+        $notification = Notification::query()
+            ->where('id', $notificationId)
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
 
-        if (! $notification->read_at) {
-            $notification->markAsRead();
-        }
+        $notification->markAsRead();
 
         return response()->json([
             'data' => $this->serialize($notification->fresh()),
@@ -43,7 +51,10 @@ class NotificationController extends Controller
 
     public function markAllAsRead(Request $request): JsonResponse
     {
-        $request->user()->unreadNotifications()->update(['read_at' => now()]);
+        Notification::query()
+            ->where('user_id', $request->user()->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
 
         return response()->json([
             'data' => ['status' => 'ok'],
@@ -54,17 +65,17 @@ class NotificationController extends Controller
     {
         $validated = $request->validate([
             'token' => ['required', 'string', 'max:255'],
-            'platform' => ['nullable', 'string', 'in:ios,android,web,mobile'],
-            'device_name' => ['nullable', 'string', 'max:120'],
+            'device_type' => ['nullable', 'string', 'in:ios,android'],
+            'device_name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $deviceToken = UserDeviceToken::query()->updateOrCreate(
+        $deviceToken = DeviceToken::query()->updateOrCreate(
             ['token' => $validated['token']],
             [
                 'user_id' => $request->user()->id,
-                'platform' => $validated['platform'] ?? 'mobile',
+                'device_type' => $validated['device_type'] ?? 'ios',
                 'device_name' => $validated['device_name'] ?? null,
-                'last_used_at' => now(),
+                'is_active' => true,
             ]
         );
 
@@ -76,20 +87,21 @@ class NotificationController extends Controller
         ], 201);
     }
 
-    private function serialize(DatabaseNotification $notification): array
+    private function serialize(Notification $notification): array
     {
-        $data = is_array($notification->data) ? $notification->data : [];
+        $payload = is_array($notification->data) ? $notification->data : [];
 
         return [
-            'id' => $notification->id,
-            'type' => $data['type'] ?? 'general',
-            'title' => $data['title'] ?? 'Bildirim',
-            'body' => $data['body'] ?? '',
-            'action_url' => $data['action_url'] ?? null,
-            'image_url' => $data['image_url'] ?? null,
-            'payload' => $data['payload'] ?? null,
-            'broadcast_id' => $data['broadcast_id'] ?? null,
+            'id' => (string) $notification->id,
+            'type' => $notification->type,
+            'title' => $notification->title,
+            'body' => $notification->body,
+            'action_url' => $payload['action_url'] ?? null,
+            'image_url' => $payload['image_url'] ?? null,
+            'payload' => isset($payload['payload']) && is_array($payload['payload']) ? $payload['payload'] : $payload,
+            'broadcast_id' => isset($payload['broadcast_id']) ? (int) $payload['broadcast_id'] : null,
             'read_at' => $notification->read_at?->toIso8601String(),
+            'sent_at' => $notification->sent_at?->toIso8601String(),
             'created_at' => $notification->created_at?->toIso8601String(),
         ];
     }

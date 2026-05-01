@@ -21,6 +21,17 @@ class Notification extends Model
         'sent_at',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (!$model->tenant_id) {
+                $model->tenant_id = 1;
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

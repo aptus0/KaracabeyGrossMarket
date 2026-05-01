@@ -59,4 +59,17 @@ return [
         'url' => env('STOREFRONT_URL', 'http://127.0.0.1:3000'),
     ],
 
+    'apns' => [
+        'key' => env('APNS_KEY_PATH'),
+        'key_id' => env('APNS_KEY_ID'),
+        'team_id' => env('APNS_TEAM_ID'),
+        'bundle_id' => env('APNS_BUNDLE_ID'),
+        'production' => env('APNS_PRODUCTION', false),
+    ],
+
+    'fcm' => [
+        'server_key' => env('FCM_SERVER_KEY'),
+        'sender_id' => env('FCM_SENDER_ID'),
+    ],
+
 ];

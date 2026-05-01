@@ -4,12 +4,14 @@ namespace App\Services\Notifications;
 
 use App\Models\NotificationBroadcast;
 use App\Models\User;
-use App\Notifications\StorefrontNotification;
+use App\Services\PushNotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class StorefrontNotificationBroadcaster
 {
+    public function __construct(private readonly PushNotificationService $pushNotifications) {}
+
     public function deliver(NotificationBroadcast $broadcast): int
     {
         $delivered = 0;
@@ -18,15 +20,20 @@ class StorefrontNotificationBroadcaster
             ->orderBy('id')
             ->chunkById(100, function (Collection $users) use ($broadcast, &$delivered): void {
                 foreach ($users as $user) {
-                    $user->notify(new StorefrontNotification([
-                        'type' => $broadcast->type,
-                        'title' => $broadcast->title,
-                        'body' => $broadcast->body,
-                        'action_url' => $broadcast->action_url,
-                        'image_url' => $broadcast->image_url,
-                        'payload' => $broadcast->payload,
-                        'broadcast_id' => $broadcast->id,
-                    ]));
+                    $this->pushNotifications->sendToUser(
+                        $user,
+                        $broadcast->title,
+                        $broadcast->body,
+                        [
+                            'type' => $broadcast->type,
+                            'action_url' => $broadcast->action_url,
+                            'image_url' => $broadcast->image_url,
+                            'broadcast_id' => $broadcast->id,
+                            'payload' => $broadcast->payload ?? [],
+                            'tenant_id' => $broadcast->tenant_id,
+                        ],
+                        $broadcast->tenant_id,
+                    );
 
                     $delivered++;
                 }
