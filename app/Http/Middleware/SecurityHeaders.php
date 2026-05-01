@@ -38,14 +38,25 @@ class SecurityHeaders
             $formSources[]    = 'http://127.0.0.1:8000';
             $formSources[]    = 'https://karacabey-gross-market.test';
             $formSources[]    = 'http://karacabey-gross-market.test';
+            $connectSources[] = 'http://web';
+            $connectSources[] = 'http://kgm-nginx';
         }
+
+        $frameAncestors = collect([
+            parse_url((string) config('commerce.domains.storefront'), PHP_URL_SCHEME) && parse_url((string) config('commerce.domains.storefront'), PHP_URL_HOST)
+                ? rtrim((string) config('commerce.domains.storefront'), '/')
+                : null,
+            parse_url((string) config('commerce.domains.admin'), PHP_URL_SCHEME) && parse_url((string) config('commerce.domains.admin'), PHP_URL_HOST)
+                ? rtrim((string) config('commerce.domains.admin'), '/')
+                : null,
+        ])->filter()->unique()->implode(' ');
 
         $directives = [
             "default-src 'self'",
             "base-uri 'self'",
             "object-src 'none'",
             "frame-src 'self' https://www.paytr.com https://*.paytr.com",
-            "frame-ancestors 'self' https://karacabeygrossmarket.com https://www.karacabeygrossmarket.com https://app.karacabeygrossmarket.com",
+            "frame-ancestors 'self' {$frameAncestors}",
             'script-src ' . implode(' ', array_unique($scriptSources)),
             'style-src '  . implode(' ', array_unique($styleSources)),
             "img-src 'self' data: https:",

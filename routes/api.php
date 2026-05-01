@@ -2,16 +2,20 @@
 
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\ContentController;
 use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\FavoriteController;
+use App\Http\Controllers\Api\HomepageBlockController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\PaymentStatusController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\RefundController;
+use App\Http\Controllers\Api\StoryController;
 use App\Http\Controllers\Api\UserOrderController;
 use App\Http\Controllers\Paytr\CallbackController;
 use Illuminate\Support\Facades\Route;
@@ -53,6 +57,10 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:api', 'throttle:api'])->group(function (): void {
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::post('/notifications/{notificationId}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/notifications/device-tokens', [NotificationController::class, 'storeDeviceToken']);
         Route::apiResource('addresses', AddressController::class)->except(['show']);
         Route::get('/favorites', [FavoriteController::class, 'index']);
         Route::post('/favorites/{product:slug}', [FavoriteController::class, 'store']);
@@ -66,6 +74,24 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:api', 'throttle:payments'])->group(function (): void {
         Route::get('/payments/{payment}/status', [PaymentStatusController::class, 'show']);
         Route::post('/payments/{payment}/refunds', [RefundController::class, 'store']);
+    });
+
+    // Admin APIs
+    Route::prefix('admin')->middleware(['auth:api', 'throttle:api'])->group(function (): void {
+        // Campaigns
+        Route::get('/campaigns/export', [CampaignController::class, 'exportJson']);
+        Route::apiResource('campaigns', CampaignController::class);
+        Route::post('/campaigns/reorder', [CampaignController::class, 'reorder']);
+
+        // Stories
+        Route::get('/stories/export', [StoryController::class, 'exportJson']);
+        Route::apiResource('stories', StoryController::class);
+        Route::post('/stories/reorder', [StoryController::class, 'reorder']);
+
+        // Homepage Blocks
+        Route::get('/homepage/export', [HomepageBlockController::class, 'exportJson']);
+        Route::apiResource('homepage', HomepageBlockController::class);
+        Route::post('/homepage/reorder', [HomepageBlockController::class, 'reorder']);
     });
 });
 

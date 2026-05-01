@@ -30,7 +30,6 @@ final class OrderDetailViewModel: ObservableObject {
         do {
             let response: PaymentStatusResponse = try await APIClient.shared.request(PaymentEndpoint.status(paymentId: paymentId))
             self.payment = response.data.local
-            self.order = response.data.local.order
         } catch {
             errorMessage = "Ödeme durumu güncellenemedi."
         }

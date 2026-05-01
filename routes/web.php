@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\FakeAuth2Controller as AdminFakeAuth2Controller;
 use App\Http\Controllers\Admin\HomepageBlockController as AdminHomepageBlockController;
 use App\Http\Controllers\Admin\MarketingSettingController as AdminMarketingSettingController;
 use App\Http\Controllers\Admin\NavigationItemController as AdminNavigationItemController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
@@ -70,10 +71,12 @@ Route::prefix($adminPrefix)->name('admin.')->middleware('admin.security')->group
         Route::get('auth-logs', AdminAuthLogController::class)->name('auth-logs.index');
         Route::resource('products', AdminProductController::class)->only(['index', 'create', 'store', 'edit', 'update']);
         Route::post('products/bulk', [AdminProductController::class, 'bulkAction'])->name('products.bulk');
-        Route::resource('categories', AdminCategoryController::class)->only(['index', 'store']);
+        Route::resource('categories', AdminCategoryController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('orders', AdminOrderController::class)->only(['index', 'show']);
         Route::resource('payments', AdminPaymentController::class)->only(['index']);
         Route::resource('users', AdminUserController::class)->only(['index']);
+        Route::get('notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
+        Route::post('notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
         Route::resource('pages', AdminPageController::class)->only(['index', 'create', 'store', 'edit', 'update']);
         Route::resource('homepage-blocks', AdminHomepageBlockController::class)
             ->only(['index', 'store', 'update', 'destroy'])

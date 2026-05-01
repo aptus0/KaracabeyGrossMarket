@@ -31,18 +31,24 @@ class DatabaseSeeder extends Seeder
         $this->seedCampaign($tenant);
         $this->seedMarketingSettings($tenant);
         $this->seedAdmin();
+        $this->call(StorefrontCatalogSeeder::class);
     }
 
     private function seedTenant(): Tenant
     {
+        $primaryDomain = (string) config('commerce.primary_domain', 'karacabeygrossmarket.com');
+
         return Tenant::query()->updateOrCreate(
             ['slug' => 'karacabey-gross-market'],
             [
                 'name' => 'Karacabey Gross Market',
-                'domain' => 'karacabeygrossmarket.com',
+                'domain' => $primaryDomain,
                 'is_active' => true,
                 'settings' => [
+                    'storefront_domain' => $primaryDomain,
                     'admin_domain' => 'app.karacabeygrossmarket.com',
+                    'api_domain' => 'api.karacabeygrossmarket.com',
+                    'cdn_domain' => 'cdn.karacabeygrossmarket.com',
                     'market' => 'Karacabey',
                 ],
             ]
@@ -120,7 +126,6 @@ class DatabaseSeeder extends Seeder
             ['placement' => 'top',             'label' => 'Adresim',        'url' => '/addresses',               'icon' => 'map-pin',        'sort_order' => 20],
             ['placement' => 'header',          'label' => 'Ürünler',        'url' => $p,                         'icon' => 'grid',           'sort_order' => 10],
             ['placement' => 'header',          'label' => 'Kampanyalar',    'url' => $k,                         'icon' => 'tag',            'sort_order' => 20],
-            ['placement' => 'header',          'label' => 'Kurumsal',       'url' => '/kurumsal/hakkimizda',     'icon' => 'file-text',      'sort_order' => 30],
             ['placement' => 'category',        'label' => 'Tüm Ürünler',    'url' => $p,                         'icon' => 'grid',           'sort_order' => 10],
             ['placement' => 'footer_primary',  'label' => 'Ürünler',        'url' => $p,                         'icon' => 'grid',           'sort_order' => 10],
             ['placement' => 'footer_primary',  'label' => 'Kampanyalar',    'url' => $k,                         'icon' => 'tag',            'sort_order' => 20],

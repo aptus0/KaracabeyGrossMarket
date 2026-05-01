@@ -231,26 +231,48 @@ enum PaymentEndpoint: Endpoint {
 
 // MARK: - Request/Response Models
 struct CheckoutRequest: Codable {
-    let customerName: String
-    let customerEmail: String
-    let customerPhone: String
-    let shippingCity: String
-    let shippingDistrict: String
-    let shippingAddress: String
+    let customer: CustomerInfo
+    let shipping: ShippingInfo
+    let cartToken: String?
 
     enum CodingKeys: String, CodingKey {
-        case customerName = "customer_name"
-        case customerEmail = "customer_email"
-        case customerPhone = "customer_phone"
-        case shippingCity = "shipping_city"
-        case shippingDistrict = "shipping_district"
-        case shippingAddress = "shipping_address"
+        case customer, shipping
+        case cartToken = "cart_token"
     }
 }
 
+struct CustomerInfo: Codable {
+    let name: String
+    let email: String
+    let phone: String
+}
+
+struct ShippingInfo: Codable {
+    let city: String?
+    let district: String?
+    let address: String
+}
+
 struct CheckoutResponse: Codable {
-    let token: String
-    let order: Order
+    let merchantOid: String
+    let orderId: Int
+    let status: String
+    let totalCents: Int
+    let currency: String
+    let iframeToken: String
+    let iframeSrc: String?
+    let checkoutUrl: String?
+
+    enum CodingKeys: String, CodingKey {
+        case merchantOid = "merchant_oid"
+        case orderId = "order_id"
+        case status, totalCents = "total_cents", currency
+        case iframeToken = "iframe_token"
+        case iframeSrc = "iframe_src"
+        case checkoutUrl = "checkout_url"
+    }
+
+    var token: String { iframeToken }
 }
 
 struct RefundRequest: Codable {

@@ -1,6 +1,7 @@
 import Foundation
 import UserNotifications
 import Combine
+import UIKit
 
 @MainActor
 class PushNotificationManager: NSObject, ObservableObject, UNUserNotificationCenterDelegate {

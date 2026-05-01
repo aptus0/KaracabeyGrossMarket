@@ -61,9 +61,8 @@ struct FilterSheetView: View {
 
                 Section {
                     Button("Filtreleri Uygula") {
-                        // Apply filters
                         Task {
-                            await viewModel.load(filter: tempFilter)
+                            await viewModel.load(category: nil)
                             isPresented = false
                         }
                     }

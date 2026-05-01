@@ -1,8 +1,9 @@
 <?php
 
 $defaultOrigins = implode(',', array_filter([
-    env('FRONTEND_URL', 'http://localhost:3000'),
+    env('STOREFRONT_URL', env('FRONTEND_URL', 'http://localhost:3001')),
     env('ADMIN_URL', 'http://localhost:8000'),
+    env('API_URL'),
 ]));
 
 $localOriginPatterns = env('APP_ENV', 'production') === 'local' ? [

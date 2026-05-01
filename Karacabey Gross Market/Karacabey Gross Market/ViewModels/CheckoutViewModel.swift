@@ -25,13 +25,17 @@ final class CheckoutViewModel: ObservableObject {
 
         do {
             let request = CheckoutRequest(
-                cartItems: [],
-                customerName: customerName,
-                customerEmail: customerEmail,
-                customerPhone: customerPhone,
-                shippingCity: shippingCity,
-                shippingDistrict: shippingDistrict,
-                shippingAddress: shippingAddress
+                customer: CustomerInfo(
+                    name: customerName,
+                    email: customerEmail,
+                    phone: customerPhone
+                ),
+                shipping: ShippingInfo(
+                    city: shippingCity.isEmpty ? nil : shippingCity,
+                    district: shippingDistrict.isEmpty ? nil : shippingDistrict,
+                    address: shippingAddress
+                ),
+                cartToken: nil
             )
 
             let response: CheckoutResponse = try await APIClient.shared.request(PaymentEndpoint.checkout(request))

@@ -61,6 +61,10 @@
                     <x-lucide-users class="h-4 w-4" />
                     Müşteriler & Yetkililer
                 </a>
+                <a href="{{ route('admin.notifications.index') }}" class="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all {{ request()->routeIs('admin.notifications.*') ? 'bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-[0_14px_32px_rgba(249,115,22,0.24)]' : 'text-slate-600 hover:bg-orange-50 hover:text-orange-700' }}">
+                    <x-lucide-bell-ring class="h-4 w-4" />
+                    Bildirim Merkezi
+                </a>
                 <a href="{{ route('admin.campaigns.index') }}" class="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all {{ request()->routeIs('admin.campaigns.*', 'admin.coupons.*') ? 'bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-[0_14px_32px_rgba(249,115,22,0.24)]' : 'text-slate-600 hover:bg-orange-50 hover:text-orange-700' }}">
                     <x-lucide-ticket class="h-4 w-4" />
                     Kampanya & Kuponlar

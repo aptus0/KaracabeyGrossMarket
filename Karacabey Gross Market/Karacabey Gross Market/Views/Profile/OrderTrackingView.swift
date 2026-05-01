@@ -135,7 +135,7 @@ struct OrderTrackingView: View {
                             InfoRow(label: "Şehir", value: city)
                             Divider()
                         }
-                        if let address = order.address?.street {
+                        if let address = order.address?.addressLine {
                             InfoRow(label: "Adres", value: address)
                         }
                     }

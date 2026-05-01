@@ -20,7 +20,10 @@ class CategoryController extends Controller
                 ->whereBelongsTo($tenant)
                 ->where('is_active', true)
                 ->whereNull('parent_id')
-                ->with(['children' => fn ($query) => $query->where('is_active', true)])
+                ->with([
+                    'children' => fn ($query) => $query->where('is_active', true),
+                    'products',
+                ])
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->get()
@@ -67,6 +70,7 @@ class CategoryController extends Controller
             'description' => $category->description,
             'image_url' => $category->image_url,
             'seo' => $category->seo,
+            'product_count' => $category->products()->count(),
         ];
 
         if ($includeChildren) {

@@ -49,7 +49,10 @@ class ProductController extends Controller
 
             $query->when(
                 $category,
-                fn ($query) => $query->whereHas('categories', fn ($query) => $query->whereKey($category->id)),
+                fn ($query) => $query->whereHas(
+                    'categories',
+                    fn ($query) => $query->whereIn('categories.id', $category->children()->pluck('id')->push($category->id))
+                ),
                 fn ($query) => $query->whereRaw('1 = 0')
             );
         }
