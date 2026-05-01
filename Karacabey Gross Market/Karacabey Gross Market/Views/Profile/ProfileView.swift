@@ -152,8 +152,3 @@ struct AddressesView: View {
         Text("Adreslerim").navigationTitle("Adreslerim")
     }
 }
-struct OrdersView: View {
-    var body: some View {
-        Text("Siparişlerim").navigationTitle("Siparişlerim")
-    }
-}

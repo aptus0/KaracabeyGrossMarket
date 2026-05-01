@@ -29,6 +29,8 @@ class ProductController extends Controller
             ->whereBelongsTo($tenant)
             ->where('is_active', true)
             ->with('categories')
+            ->orderByRaw('CASE WHEN image_url IS NULL OR image_url = "" THEN 1 ELSE 0 END ASC')
+            ->latest('id')
             ->when(! empty($validated['q']), function ($query) use ($validated): void {
                 $term = '%'.addcslashes(Str::squish((string) $validated['q']), '\\%_').'%';
                 $query->where(function ($query) use ($term): void {

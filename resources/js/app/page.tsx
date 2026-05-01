@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { AdvertisingBanners } from "@/app/_components/AdvertisingBanners";
-import { CategoryCard } from "@/app/_components/CategoryCard";
 import { HomeCarousel } from "@/app/_components/HomeCarousel";
 import { MobileCatalogRedirect } from "@/app/_components/MobileCatalogRedirect";
-import { ProductSlider } from "@/app/_components/ProductSlider";
 import { SeoHead } from "@/app/_components/SeoHead";
 import { TrustBar } from "@/app/_components/TrustBar";
 import { GuestLayout } from "@/app/_layouts/GuestLayout";
+import { ShowroomSection } from "@/app/_components/ShowroomSection";
+import { BrandMarquee } from "@/app/_components/BrandMarquee";
 import { buildMetadata } from "@/lib/seo";
 import {
   fetchFeaturedStorefrontProducts,
@@ -32,47 +32,71 @@ const jsonLd = {
 
 export default async function Home() {
   const [featuredProducts, categories] = await Promise.all([
-    fetchFeaturedStorefrontProducts(8),
+    fetchFeaturedStorefrontProducts(12),
     fetchStorefrontCategories(),
   ]);
+
+  // Vitrinler için ürünleri sanal olarak bölüyoruz (Gerçekte API'den özel endpointler ile çekilebilir)
+  const weeklyProducts = featuredProducts.slice(0, 4);
+  const bestSellers = featuredProducts.slice(4, 8);
+  const cosmeticProducts = featuredProducts.slice(8, 12);
 
   return (
     <GuestLayout>
       <MobileCatalogRedirect />
       <SeoHead data={jsonLd} />
 
-      <main>
-        <HomeCarousel />
+      <main className="min-h-screen bg-[#f3f6f8]">
+        {/* Hero Slider */}
+        <div className="relative">
+          <HomeCarousel />
+          {/* Subtle bottom glass overlay to blend with the background */}
+          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#f3f6f8] to-transparent z-10 pointer-events-none" />
+        </div>
 
         <TrustBar />
 
-        {categories.length > 0 && (
-          <section className="content-band" aria-label="Kategoriler">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Kategoriler</p>
-                <h2>Hızlı alışveriş alanları</h2>
-              </div>
-            </div>
-            <div className="category-grid">
-              {categories.map((category) => (
-                <CategoryCard key={category.slug} category={category} />
-              ))}
-            </div>
-          </section>
-        )}
+        <div className="max-w-[1120px] mx-auto px-4 md:px-6 relative z-20 -mt-6">
+          {/* Showroom 1: Haftanın Ürünleri */}
+          {weeklyProducts.length > 0 && (
+            <ShowroomSection 
+              title="Haftanın Fırsatları" 
+              subtitle="Bu haftaya özel indirimli fiyatları kaçırmayın"
+              products={weeklyProducts}
+              theme="default"
+              actionLink="/products?q=kampanya"
+            />
+          )}
 
-        <AdvertisingBanners />
+          <AdvertisingBanners />
 
-        <section className="content-band" aria-label="Öne çıkan ürünler">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Bugünün seçimi</p>
-              <h2>Hızlı sepet ürünleri</h2>
-            </div>
-          </div>
-          <ProductSlider products={featuredProducts} />
-        </section>
+          {/* Showroom 2: Çok Satanlar */}
+          {bestSellers.length > 0 && (
+            <ShowroomSection 
+              title="Çok Satan Ürünler" 
+              subtitle="Müşterilerimizin en çok tercih ettiği ürünler"
+              products={bestSellers}
+              theme="bestseller"
+              actionLink="/products?q=populer"
+            />
+          )}
+        </div>
+
+        {/* Markalar Kayan Yazı */}
+        <BrandMarquee />
+
+        <div className="max-w-[1120px] mx-auto px-4 md:px-6">
+          {/* Showroom 3: Cilt & Kozmetik */}
+          {cosmeticProducts.length > 0 && (
+            <ShowroomSection 
+              title="Cilt ve Kozmetik" 
+              subtitle="Güzelliğinize değer katan seçkin markalar"
+              products={cosmeticProducts}
+              theme="cosmetics"
+              actionLink="/categories/kozmetik"
+            />
+          )}
+        </div>
       </main>
     </GuestLayout>
   );

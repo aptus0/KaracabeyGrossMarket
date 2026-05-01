@@ -11,8 +11,12 @@ struct RegisterView: View {
         ScrollView {
             VStack(spacing: 28) {
                 VStack(spacing: 8) {
-                    Image(systemName: "person.badge.plus")
-                        .font(.system(size: 56)).foregroundColor(.kgmOrange)
+                    Image("AppLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 80, height: 80)
+                        .padding(16)
+                        .background(Circle().fill(Color.white).shadow(radius: 5))
                     Text("Hesap Oluştur")
                         .font(.poppins(weight: .bold, size: 22))
                     Text("Ücretsiz kayıt olun")

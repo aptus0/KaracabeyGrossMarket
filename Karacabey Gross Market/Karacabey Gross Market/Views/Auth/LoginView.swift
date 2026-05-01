@@ -14,9 +14,12 @@ struct LoginView: View {
                 VStack(spacing: 28) {
                     // Logo / header
                     VStack(spacing: 8) {
-                        Image(systemName: "cart.fill")
-                            .font(.system(size: 56))
-                            .foregroundColor(.kgmOrange)
+                        Image("AppLogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 80, height: 80)
+                            .padding(16)
+                            .background(Circle().fill(Color.white).shadow(radius: 5))
                         Text("Karacabey Gross Market")
                             .font(.poppins(weight: .bold, size: 22))
                         Text("Hesabınıza giriş yapın")

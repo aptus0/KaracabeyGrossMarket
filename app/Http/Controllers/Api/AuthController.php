@@ -35,7 +35,7 @@ class AuthController extends Controller
             'password'    => [
                 'required',
                 'string',
-                Password::min(8)->mixedCase()->numbers()->max(255),
+                Password::min(8)->max(255),
             ],
             'location'    => ['nullable', 'string', 'max:160'],
             'device_name' => ['nullable', 'string', 'max:80'],

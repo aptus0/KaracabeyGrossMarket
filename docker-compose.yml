@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
+      args:
+        BUILDKIT_INLINE_CACHE: 1
     image: kgm-php-app
     container_name: kgm-app
     restart: unless-stopped
@@ -10,9 +12,16 @@ services:
     volumes:
       - ./:/var/www/html
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
-      - db
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - kgm-network
 
@@ -34,37 +43,48 @@ services:
     build:
       context: .
       dockerfile: docker/node/Dockerfile
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+    image: kgm-node
     container_name: kgm-node
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - ./resources/js:/app
       - /app/node_modules
     environment:
-      - NODE_ENV=development
-      - HOSTNAME=0.0.0.0
+      NODE_ENV: development
+      HOSTNAME: 0.0.0.0
     command: npm run dev
     networks:
       - kgm-network
 
-  db:
-    image: postgres:15-alpine
-    container_name: kgm-db
+  mysql:
+    image: mysql:8.0
+    container_name: kgm-mysql
     restart: unless-stopped
+    platform: linux/amd64
     environment:
-      POSTGRES_DB: ${DB_DATABASE:-karacabey}
-      POSTGRES_USER: ${DB_USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      MYSQL_DATABASE: ${DB_DATABASE:-karacabey_gross_market}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_USER: ${DB_USERNAME:-karacabey}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
     ports:
-      - "5432:5432"
+      - "3307:3306"
     volumes:
-      - kgm-db-data:/var/lib/postgresql/data
+      - kgm-mysql-data:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
     networks:
       - kgm-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: kgm-redis
     restart: unless-stopped
     ports:
@@ -73,11 +93,16 @@ services:
       - kgm-redis-data:/data
     networks:
       - kgm-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   kgm-network:
     driver: bridge
 
 volumes:
-  kgm-db-data:
+  kgm-mysql-data:
   kgm-redis-data:

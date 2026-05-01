@@ -31,3 +31,8 @@ erkur_dump/*.csv
 
 # Keys and sensitive files
 *.pem
+
+# IDE and OS specific
+.DS_Store
+*.xcuserstate
+*.xcuserdatad/

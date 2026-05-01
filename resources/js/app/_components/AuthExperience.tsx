@@ -28,10 +28,7 @@ const loginSchema = z.object({
 
 const passwordStrengthSchema = z
   .string()
-  .min(8, "En az 8 karakter olmalı.")
-  .regex(/[A-Z]/, "En az 1 büyük harf içermeli.")
-  .regex(/[a-z]/, "En az 1 küçük harf içermeli.")
-  .regex(/[0-9]/, "En az 1 rakam içermeli.");
+  .min(8, "En az 8 karakter olmalı.");
 
 const registerSchema = z.object({
   name: z.string().trim().min(2, "Ad soyad en az 2 karakter olmalı.").max(120),
@@ -204,7 +201,7 @@ export function AuthExperience({ mode }: { mode: AuthMode }) {
       {/* Logo */}
       <div className="auth-card__logo">
         <Link href="/">
-          <KgmLogo />
+          <KgmLogo variant="app" />
         </Link>
       </div>
 
@@ -330,9 +327,6 @@ export function AuthExperience({ mode }: { mode: AuthMode }) {
           <ul className="auth-rules">
             {[
               { ok: passwordValue.length >= 8, text: "En az 8 karakter" },
-              { ok: /[A-Z]/.test(passwordValue), text: "En az 1 büyük harf" },
-              { ok: /[a-z]/.test(passwordValue), text: "En az 1 küçük harf" },
-              { ok: /[0-9]/.test(passwordValue),  text: "En az 1 rakam" },
             ].map(({ ok, text }) => (
               <li key={text} data-ok={ok}>
                 <CheckCircle2 size={11} />

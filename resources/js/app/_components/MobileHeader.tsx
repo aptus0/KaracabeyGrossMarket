@@ -59,7 +59,7 @@ export function MobileHeader() {
 
       <div className="mobile-header__top">
         <Link href="/" className="brand-mark mobile-header__brand" aria-label="Karacabey Gross Market">
-          <KgmLogo compact />
+          <KgmLogo variant="app" compact />
         </Link>
 
         <div className="mobile-header__actions">

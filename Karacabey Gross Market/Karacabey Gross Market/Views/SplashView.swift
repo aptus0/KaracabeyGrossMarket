@@ -31,9 +31,10 @@ struct SplashView: View {
                         .frame(width: 100, height: 100)
                         .shadow(color: Color.black.opacity(0.15), radius: 20, x: 0, y: 10)
                     
-                    Image(systemName: "basket.fill")
-                        .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(.kgmOrange)
+                    Image("AppLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 70, height: 70)
                 }
                 .scaleEffect(iconScale)
                 .opacity(iconOpacity)
